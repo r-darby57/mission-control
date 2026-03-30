@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { KanbanBoard } from './kanban-board'
 import { AgentOfficeView } from './agent-office-view'
 import { MemoryArchive } from './memory-archive'
@@ -9,6 +9,7 @@ import { GoalProgressDashboard } from './goal-progress-dashboard'
 import { DailyIntelBrief } from './daily-intel-brief'
 import { AccountabilityAlerts } from './accountability-alerts'
 import { OperationsStatus } from './operations-status'
+import { MobileOptimizedDashboard } from './mobile-optimized-dashboard'
 
 interface Tab {
   id: string
@@ -63,6 +64,23 @@ const tabs: Tab[] = [
 
 export function TabbedInterface() {
   const [activeTab, setActiveTab] = useState('overview')
+  const [isMobile, setIsMobile] = useState(false)
+  
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+  
+  // On mobile, show optimized dashboard for overview tab
+  if (isMobile && activeTab === 'overview') {
+    return <MobileOptimizedDashboard />
+  }
   
   const activeTabData = tabs.find(tab => tab.id === activeTab)
   const ActiveComponent = activeTabData?.component || tabs[0].component
