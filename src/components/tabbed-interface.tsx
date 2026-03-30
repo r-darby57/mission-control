@@ -9,7 +9,7 @@ import { GoalProgressDashboard } from './goal-progress-dashboard'
 import { DailyIntelBrief } from './daily-intel-brief'
 import { AccountabilityAlerts } from './accountability-alerts'
 import { OperationsStatus } from './operations-status'
-import { MobileOptimizedDashboard } from './mobile-optimized-dashboard'
+import { ModernMobileDashboard } from './modern-mobile-dashboard'
 
 interface Tab {
   id: string
@@ -77,9 +77,9 @@ export function TabbedInterface() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
   
-  // On mobile, show optimized dashboard for overview tab
+  // On mobile, show modern optimized dashboard for overview tab
   if (isMobile && activeTab === 'overview') {
-    return <MobileOptimizedDashboard />
+    return <ModernMobileDashboard />
   }
   
   const activeTabData = tabs.find(tab => tab.id === activeTab)
