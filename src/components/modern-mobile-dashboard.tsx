@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Target, Activity, DollarSign, BookOpen, Award, Zap } from 'lucide-react'
+import { sanitizeHtml } from '@/lib/security'
 
 interface CollapsibleSectionProps {
   title: string
