@@ -74,10 +74,8 @@ const nextConfig = {
   // Enable compression
   compress: true,
   
-  // Experimental features for security
-  experimental: {
-    serverComponentsExternalPackages: []
-  }
+  // Server external packages
+  serverExternalPackages: []
 }
 
 module.exports = nextConfig

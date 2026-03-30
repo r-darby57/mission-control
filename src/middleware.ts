@@ -5,9 +5,9 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next()
   
   // Get client IP for rate limiting
-  const clientIP = request.ip || 
-    request.headers.get('x-forwarded-for')?.split(',')[0] || 
+  const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0] || 
     request.headers.get('x-real-ip') || 
+    request.headers.get('cf-connecting-ip') ||
     'unknown'
   
   // Rate limiting check
