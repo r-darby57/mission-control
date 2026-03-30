@@ -192,7 +192,7 @@ export function ModernMobileDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-32"> {/* Extra bottom padding for safe area + floating actions */}
+    <div className="min-h-screen bg-red-100 pb-32"> {/* TEST: Changed to red to verify Tailwind is loading */}
       
       {/* Modern Header */}
       <div className="bg-white shadow-lg border-b-2 border-blue-100 px-6 py-6">

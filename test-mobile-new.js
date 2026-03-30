@@ -21,7 +21,7 @@ async function testMobileImprovement() {
   try {
     // Test local version first (should have the improvements)
     console.log('📱 Testing local mobile UI...');
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle2' });
+    await page.goto('http://localhost:3002', { waitUntil: 'networkidle2' });
     
     // Wait a moment for mobile detection
     await new Promise(resolve => setTimeout(resolve, 2000));
