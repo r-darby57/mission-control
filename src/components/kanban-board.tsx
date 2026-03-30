@@ -146,17 +146,17 @@ function TaskCard({ task, index }: { task: Task; index: number }) {
 
 function Column({ column, tasks }: { column: typeof columns[0]; tasks: Task[] }) {
   return (
-    <div className="flex-1 min-w-72">
-      <div className={`border-t-4 ${column.color} bg-slate-900 rounded-lg p-4`}>
-        <div className="flex items-center justify-between mb-4">
+    <div className="flex-1 min-w-64 md:min-w-72">
+      <div className={`border-t-4 ${column.color} bg-slate-900 rounded-lg p-3 md:p-4`}>
+        <div className="flex items-center justify-between mb-3 md:mb-4">
           <div className="flex items-center gap-2">
-            <h2 className="font-bold text-white text-sm">{column.title}</h2>
-            <span className="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded-full">
+            <h2 className="font-bold text-white text-xs md:text-sm">{column.title}</h2>
+            <span className="bg-slate-700 text-slate-300 text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full">
               {tasks.length}
             </span>
           </div>
           <button className="text-slate-400 hover:text-white transition-colors">
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3 md:w-4 h-3 md:h-4" />
           </button>
         </div>
         
@@ -207,18 +207,18 @@ export function KanbanBoard() {
     tasks.filter(task => task.status === status)
 
   return (
-    <div className="bg-slate-950 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-slate-950 rounded-lg p-3 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-blue-400 mb-2">
+          <h1 className="text-lg md:text-2xl font-bold text-blue-400 mb-1 md:mb-2">
             📋 MISSION CONTROL KANBAN
           </h1>
-          <p className="text-slate-400">
+          <p className="text-sm md:text-base text-slate-400">
             Strategic Task Management - Ryan's 2026 Campaign Operations
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right text-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="text-left sm:text-right text-sm">
             <div className="text-green-400 font-bold">
               {getTasksByStatus('completed').length}/{tasks.length} Complete
             </div>
@@ -226,15 +226,16 @@ export function KanbanBoard() {
               {getTasksByStatus('in-progress').length} In Progress
             </div>
           </div>
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+          <button className="px-3 md:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 text-sm md:text-base">
             <Plus className="w-4 h-4" />
-            New Task
+            <span className="hidden sm:inline">New Task</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex gap-6 overflow-x-auto pb-6">
+        <div className="flex gap-3 md:gap-6 overflow-x-auto pb-4 md:pb-6 scrollbar-hide">
           {columns.map(column => (
             <Column
               key={column.id}

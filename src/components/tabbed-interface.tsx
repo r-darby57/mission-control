@@ -68,27 +68,27 @@ export function TabbedInterface() {
   const ActiveComponent = activeTabData?.component || tabs[0].component
   
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6">
+    <div className="min-h-screen bg-slate-950 text-white p-3 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-blue-400 mb-2">
+              <h1 className="text-2xl md:text-4xl font-bold text-blue-400 mb-2">
                 🎯 MISSION CONTROL
               </h1>
-              <p className="text-slate-400">
+              <p className="text-sm md:text-base text-slate-400">
                 Strategic Command Center - Ryan's AI-Powered Operations Hub
               </p>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-mono text-green-400">
+            <div className="text-left sm:text-right">
+              <div className="text-lg md:text-2xl font-mono text-green-400">
                 {new Date().toLocaleTimeString('en-US', { 
                   timeZone: 'America/Los_Angeles',
                   hour12: false 
                 })} PDT
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-xs md:text-sm text-slate-400">
                 {new Date().toLocaleDateString('en-US', { 
                   weekday: 'long',
                   month: 'long', 
@@ -101,22 +101,22 @@ export function TabbedInterface() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-8">
-          <div className="flex gap-1 bg-slate-900 p-1 rounded-lg overflow-x-auto">
+        <div className="mb-6">
+          <div className="flex gap-1 bg-slate-900 p-1 rounded-lg overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  px-4 py-3 rounded-lg text-sm font-medium whitespace-nowrap flex items-center gap-2 transition-all duration-200
+                  px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap flex items-center gap-1 md:gap-2 transition-all duration-200 min-w-fit
                   ${activeTab === tab.id 
                     ? 'bg-blue-500 text-white shadow-lg' 
                     : 'text-slate-400 hover:text-white hover:bg-slate-700'
                   }
                 `}
               >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.label}</span>
+                <span className="text-base md:text-lg">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -128,12 +128,13 @@ export function TabbedInterface() {
         </div>
 
         {/* System Status Bar */}
-        <div className="mt-8 p-4 bg-slate-900 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6 text-sm text-slate-400">
+        <div className="mt-6 p-3 md:p-4 bg-slate-900 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-slate-400">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span>Mission Control v1.0 - Operational</span>
+                <span className="hidden sm:inline">Mission Control v1.0 - Operational</span>
+                <span className="sm:hidden">Operational</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-blue-400 rounded-full" />
@@ -141,18 +142,19 @@ export function TabbedInterface() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full" />
-                <span>Uptime: 48h Guaranteed</span>
+                <span className="hidden sm:inline">Uptime: 48h Guaranteed</span>
+                <span className="sm:hidden">48h Up</span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm">
-                Sync All
+            <div className="flex gap-2 overflow-x-auto">
+              <button className="px-2 md:px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-xs md:text-sm whitespace-nowrap">
+                Sync
               </button>
-              <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm">
-                Generate Brief
+              <button className="px-2 md:px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-xs md:text-sm whitespace-nowrap">
+                Brief
               </button>
-              <button className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors text-sm">
-                Export Data
+              <button className="px-2 md:px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors text-xs md:text-sm whitespace-nowrap">
+                Export
               </button>
             </div>
           </div>

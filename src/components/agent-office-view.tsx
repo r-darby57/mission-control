@@ -108,20 +108,20 @@ const statusLabels = {
 function AgentAvatar({ agent, onClick }: { agent: Agent; onClick: () => void }) {
   return (
     <div 
-      className="absolute cursor-pointer group transition-all duration-300 hover:scale-110"
+      className="absolute cursor-pointer group transition-all duration-300 hover:scale-110 touch-manipulation"
       style={{ left: `${agent.position.x}%`, top: `${agent.position.y}%` }}
       onClick={onClick}
     >
       <div className="relative">
         {/* Status Ring */}
         <div className={`
-          absolute -inset-2 rounded-full animate-pulse
+          absolute -inset-1 md:-inset-2 rounded-full animate-pulse
           ${statusColors[agent.status]}
           ${agent.status === 'active' ? 'animate-pulse' : ''}
         `} />
         
         {/* Avatar */}
-        <div className="relative w-16 h-16 bg-slate-800 rounded-full border-2 border-slate-700 flex items-center justify-center text-2xl hover:border-blue-500 transition-colors">
+        <div className="relative w-12 md:w-16 h-12 md:h-16 bg-slate-800 rounded-full border-2 border-slate-700 flex items-center justify-center text-lg md:text-2xl hover:border-blue-500 transition-colors">
           {agent.avatar}
         </div>
         
@@ -221,38 +221,38 @@ export function AgentOfficeView() {
   const totalTasks = agents.reduce((acc, agent) => acc + agent.tasksCompleted, 0)
   
   return (
-    <div className="bg-slate-900 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-slate-900 rounded-lg p-3 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-blue-400 mb-2">
+          <h2 className="text-lg md:text-2xl font-bold text-blue-400 mb-1 md:mb-2">
             🏢 AGENT OFFICE VIEW
           </h2>
-          <p className="text-slate-400">
+          <p className="text-sm md:text-base text-slate-400">
             Real-time Strategic Command Operations Center
           </p>
         </div>
-        <div className="text-right">
-          <div className="text-2xl font-mono text-green-400">
+        <div className="text-left sm:text-right">
+          <div className="text-lg md:text-2xl font-mono text-green-400">
             {currentTime.toLocaleTimeString('en-US', { 
               timeZone: 'America/New_York',
               hour12: false 
             })} EST
           </div>
-          <div className="text-sm text-slate-400">
+          <div className="text-xs md:text-sm text-slate-400">
             {activeAgents}/{agents.length} Agents Active
           </div>
         </div>
       </div>
       
       {/* Office Floor Plan */}
-      <div className="bg-slate-950 rounded-lg p-8 mb-6 relative min-h-96 border border-slate-700">
+      <div className="bg-slate-950 rounded-lg p-4 md:p-8 mb-4 md:mb-6 relative min-h-64 md:min-h-96 border border-slate-700">
         {/* Office Layout Background */}
-        <div className="absolute inset-4 border-2 border-dashed border-slate-700 rounded-lg opacity-50" />
+        <div className="absolute inset-2 md:inset-4 border-2 border-dashed border-slate-700 rounded-lg opacity-50" />
         
         {/* Room Labels */}
-        <div className="absolute top-6 left-6 text-slate-500 text-sm font-mono">COMMAND CENTER</div>
-        <div className="absolute bottom-6 left-6 text-slate-500 text-sm font-mono">OPERATIONS FLOOR</div>
-        <div className="absolute bottom-6 right-6 text-slate-500 text-sm font-mono">ANALYSIS LABS</div>
+        <div className="absolute top-3 md:top-6 left-3 md:left-6 text-slate-500 text-xs md:text-sm font-mono">COMMAND CENTER</div>
+        <div className="absolute bottom-3 md:bottom-6 left-3 md:left-6 text-slate-500 text-xs md:text-sm font-mono">OPERATIONS FLOOR</div>
+        <div className="absolute bottom-3 md:bottom-6 right-3 md:right-6 text-slate-500 text-xs md:text-sm font-mono">ANALYSIS LABS</div>
         
         {/* Agent Avatars */}
         {agents.map(agent => (
