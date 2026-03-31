@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
-const localStatePath = path.join(projectRoot, 'src', 'data', 'night-watch-state.json')
+const localStatePath = process.env.VERIFY_LOCAL_STATE_PATH || path.join(projectRoot, 'src', 'data', 'night-watch-state.json')
 const productionUrl = process.env.VERIFY_URL || 'https://mission-control-ryan.fly.dev/api/night-watch/state'
 const retries = Number(process.env.VERIFY_RETRIES || 18)
 const delayMs = Number(process.env.VERIFY_DELAY_MS || 10000)

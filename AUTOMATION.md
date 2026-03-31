@@ -2,17 +2,17 @@
 
 ## Best current automation
 
-The safest useful automation path is:
-1. Sync latest Night Watch + Mission Swarm snapshots into `src/data/`
-2. Commit only when snapshot data changed
-3. Push to GitHub
-4. Deploy to Fly
+The best current production path is now:
+1. Run Night Watch locally
+2. Publish Night Watch + Mission Swarm data directly to production API
+3. Verify production reflects the new `lastRun`
+4. Log status + send success/failure signals
 
 This avoids:
 - empty commits
 - pointless deploys
 - surprise releases when nothing changed
-- manual copy/paste deployment loops
+- using code releases as a data transport mechanism
 
 ## Commands
 
@@ -21,24 +21,29 @@ This avoids:
 npm run deploy:fly
 ```
 
-### Smart automation
+### Live publish automation
 ```bash
-bash scripts/auto-sync-commit-deploy.sh
+npm run live:publish
 ```
 
-or
+### End-to-end Night Watch → live production
+```bash
+npm run nightwatch:live
+```
 
+What the live path does:
+- reads latest local Night Watch + Mission Swarm JSON
+- publishes directly to production API
+- verifies production reflects the latest `lastRun`
+- writes a status line to `night-watch/logs/publish-status.jsonl`
+- sends success/failure signals
+
+### Legacy snapshot/deploy automation
 ```bash
 npm run auto:publish
 ```
 
-What it does:
-- syncs latest snapshot files
-- checks whether snapshot JSON actually changed
-- if no changes: exits cleanly
-- if changed: commits, pushes, deploys
-- verifies production reflects the new Night Watch snapshot
-- writes a status line to `night-watch/logs/publish-status.jsonl`
+Use this for fallback or when you intentionally want to refresh the checked-in snapshot/deploy path.
 
 ## Optional environment flags
 
@@ -59,12 +64,12 @@ FORCE_DEPLOY=1 bash scripts/auto-sync-commit-deploy.sh
 
 ## Recommended scheduler target
 
-Run Night Watch first, then run automation.
+Run Night Watch first, then live publish.
 
 Example sequence:
 ```bash
 cd /Users/rj/.openclaw/workspace/night-watch && python3 night_watch.py
-cd /Users/rj/.openclaw/workspace/mission-control && bash scripts/auto-sync-commit-deploy.sh
+cd /Users/rj/.openclaw/workspace/mission-control && bash scripts/live-publish-night-watch.sh
 ```
 
 ## Verification, logging, and alerts
@@ -96,9 +101,9 @@ On publish failure, the pipeline now attempts:
 On success, it sends a lightweight OpenClaw success event after production verification.
 
 ## Safety notes
-- This automation only stages/commits snapshot files in `src/data/`
-- It does not auto-stage unrelated work
-- It skips deploy if there is no snapshot change
-- It verifies production after deploy by checking `lastRun`
-- It logs success/failure/no-op status for auditability
-- It is best for production snapshot publishing, not arbitrary code releases
+- The live automation updates production data without a code deploy
+- The legacy snapshot automation only stages/commits snapshot files in `src/data/`
+- Legacy snapshot automation does not auto-stage unrelated work
+- Live automation verifies production freshness by checking `lastRun`
+- Both paths log success/failure/no-op status for auditability
+- Use deploy-based publishing only for fallback or deliberate code releases
