@@ -12,6 +12,7 @@
     "deploy:fly": "bash scripts/deploy-with-sync.sh",
     "auto:publish": "bash scripts/auto-sync-commit-deploy.sh",
     "nightwatch:publish": "bash scripts/night-watch-to-prod.sh",
+    "verify:deploy": "node scripts/verify-night-watch-deploy.mjs",
     "security:audit": "npm audit && node security-audit.js",
     "security:headers": "curl -I https://mission-control-ryan.fly.dev/",
     "security:check": "npm run security:audit && npm run security:headers"

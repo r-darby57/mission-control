@@ -26,11 +26,19 @@ npm run deploy:fly
 bash scripts/auto-sync-commit-deploy.sh
 ```
 
+or
+
+```bash
+npm run auto:publish
+```
+
 What it does:
 - syncs latest snapshot files
 - checks whether snapshot JSON actually changed
 - if no changes: exits cleanly
 - if changed: commits, pushes, deploys
+- verifies production reflects the new Night Watch snapshot
+- writes a status line to `night-watch/logs/publish-status.jsonl`
 
 ## Optional environment flags
 
@@ -59,8 +67,31 @@ cd /Users/rj/.openclaw/workspace/night-watch && python3 night_watch.py
 cd /Users/rj/.openclaw/workspace/mission-control && bash scripts/auto-sync-commit-deploy.sh
 ```
 
+## Verification and status logging
+
+### Verify production snapshot freshness manually
+```bash
+npm run verify:deploy
+```
+
+### Publish status log
+The pipeline appends structured status entries to:
+```bash
+/Users/rj/.openclaw/workspace/night-watch/logs/publish-status.jsonl
+```
+
+Status values include:
+- `started`
+- `noop`
+- `committed`
+- `pushed`
+- `success`
+- `failure`
+
 ## Safety notes
 - This automation only stages/commits snapshot files in `src/data/`
 - It does not auto-stage unrelated work
 - It skips deploy if there is no snapshot change
+- It verifies production after deploy by checking `lastRun`
+- It logs success/failure/no-op status for auditability
 - It is best for production snapshot publishing, not arbitrary code releases
