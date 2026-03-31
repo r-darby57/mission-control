@@ -1,5 +1,5 @@
 {
-  "lastRun": "2026-03-31T07:24:58.768166",
+  "lastRun": "2026-03-31T07:44:53.074713",
   "lastStatus": "completed",
   "lastRecommendation": {
     "id": "swarm-001",
@@ -19,7 +19,7 @@
     ],
     "validation": "Run project build before claiming success."
   },
-  "lastReport": "reports/mission-swarm-2026-03-31-072458.md",
+  "lastReport": "reports/mission-swarm-2026-03-31-074453.md",
   "history": [
     {
       "ts": "2026-03-31T07:24:56.830142",
@@ -28,6 +28,11 @@
     },
     {
       "ts": "2026-03-31T07:24:58.768201",
+      "topRecommendation": "Add Mission Swarm summary cards to Night Watch dashboard",
+      "status": "completed"
+    },
+    {
+      "ts": "2026-03-31T07:44:53.074796",
       "topRecommendation": "Add Mission Swarm summary cards to Night Watch dashboard",
       "status": "completed"
     }
