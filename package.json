@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "sync:snapshots": "node scripts/sync-night-watch-snapshots.mjs",
+    "build:sync": "npm run sync:snapshots && npm run build",
+    "deploy:fly": "bash scripts/deploy-with-sync.sh",
     "security:audit": "npm audit && node security-audit.js",
     "security:headers": "curl -I https://mission-control-ryan.fly.dev/",
     "security:check": "npm run security:audit && npm run security:headers"
