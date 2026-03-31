@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import nightWatchState from '@/data/night-watch-state.json'
+import { getNightWatchData } from '@/lib/night-watch-data'
 
 export async function GET() {
-  return NextResponse.json(nightWatchState)
+  const { state, meta } = getNightWatchData()
+  return NextResponse.json({ ...((state as Record<string, unknown>) ?? {}), _meta: meta })
 }

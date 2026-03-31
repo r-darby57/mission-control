@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import trends from '@/data/night-watch-trends.json'
+import { getNightWatchData } from '@/lib/night-watch-data'
 
 export async function GET() {
-  return NextResponse.json(trends)
+  const { trends, meta } = getNightWatchData()
+  return NextResponse.json({ ...((trends as Record<string, unknown>) ?? {}), _meta: meta })
 }

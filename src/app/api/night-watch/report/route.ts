@@ -1,34 +1,40 @@
 import { NextResponse } from 'next/server'
-import nightWatchState from '@/data/night-watch-state.json'
-import swarmState from '@/data/mission-swarm-state.json'
-import recommendations from '@/data/mission-swarm-recommendations.json'
+import { getNightWatchData } from '@/lib/night-watch-data'
 
 function buildPreview() {
+  const { state, swarmState, swarmRecommendations, meta } = getNightWatchData()
+  const typedState = (state as Record<string, any>) ?? {}
+  const typedSwarmState = (swarmState as Record<string, any>) ?? {}
+  const typedRecommendations = (swarmRecommendations as Record<string, any>) ?? {}
+
   const lines = [
     'Night Watch Morning Memo',
-    `Status: ${nightWatchState.lastStatus ?? 'unknown'}`,
-    `Mode: ${nightWatchState.currentMode ?? 'safe-internal'}`,
-    `Last task: ${nightWatchState.lastTask?.type ?? 'none'} (${nightWatchState.lastTask?.score ?? 'n/a'})`,
+    `Status: ${typedState.lastStatus ?? 'unknown'}`,
+    `Mode: ${typedState.currentMode ?? 'safe-internal'}`,
+    `Source: ${meta.source ?? 'snapshot'}`,
+    `Last task: ${typedState.lastTask?.type ?? 'none'} (${typedState.lastTask?.score ?? 'n/a'})`,
     '',
     'Findings:',
-    ...((nightWatchState.lastTask?.findings ?? []).map((finding) => `- ${finding}`)),
+    ...(((typedState.lastTask?.findings ?? []) as string[]).map((finding) => `- ${finding}`)),
     '',
-    `Recommendation: ${nightWatchState.lastTask?.recommendation ?? 'No recommendation available.'}`,
+    `Recommendation: ${typedState.lastTask?.recommendation ?? 'No recommendation available.'}`,
     '',
     'Mission Swarm:',
-    `Status: ${swarmState.lastStatus ?? 'idle'}`,
-    `Top recommendation: ${swarmState.lastRecommendation?.title ?? 'None'}`,
-    `Safe builder: ${swarmState.lastSafeBuilderAction?.summary ?? 'Not ready'}`,
+    `Status: ${typedSwarmState.lastStatus ?? 'idle'}`,
+    `Top recommendation: ${typedSwarmState.lastRecommendation?.title ?? 'None'}`,
+    `Safe builder: ${typedSwarmState.lastSafeBuilderAction?.summary ?? 'Not ready'}`,
     '',
     'Top swarm queue:',
-    ...((recommendations.items ?? []).slice(0, 3).map((item, idx) => `${idx + 1}. ${item.title} [${item.role}] score=${item.score ?? 'n/a'}`)),
+    ...((((typedRecommendations.items ?? []) as Array<Record<string, any>>).slice(0, 3)).map((item, idx) => `${idx + 1}. ${item.title} [${item.role}] score=${item.score ?? 'n/a'}`)),
   ]
 
   return lines.join('\n')
 }
 
 export async function GET() {
+  const { meta } = getNightWatchData()
   return NextResponse.json({
     preview: buildPreview(),
+    _meta: meta,
   })
 }

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import swarmState from '@/data/mission-swarm-state.json'
-import recommendations from '@/data/mission-swarm-recommendations.json'
+import { getNightWatchData } from '@/lib/night-watch-data'
 
 export async function GET() {
+  const { swarmState, swarmRecommendations, meta } = getNightWatchData()
   return NextResponse.json({
     state: swarmState,
-    recommendations,
+    recommendations: swarmRecommendations,
+    _meta: meta,
   })
 }
