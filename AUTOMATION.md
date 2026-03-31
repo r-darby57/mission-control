@@ -67,7 +67,7 @@ cd /Users/rj/.openclaw/workspace/night-watch && python3 night_watch.py
 cd /Users/rj/.openclaw/workspace/mission-control && bash scripts/auto-sync-commit-deploy.sh
 ```
 
-## Verification and status logging
+## Verification, logging, and alerts
 
 ### Verify production snapshot freshness manually
 ```bash
@@ -87,6 +87,13 @@ Status values include:
 - `pushed`
 - `success`
 - `failure`
+
+### Failure alerting
+On publish failure, the pipeline now attempts:
+1. a macOS local notification
+2. an OpenClaw wake event (`openclaw system event --mode now`)
+
+On success, it sends a lightweight OpenClaw success event after production verification.
 
 ## Safety notes
 - This automation only stages/commits snapshot files in `src/data/`

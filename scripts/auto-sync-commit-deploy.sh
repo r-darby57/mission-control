@@ -22,10 +22,21 @@ record_status() {
   node scripts/log-publish-status.mjs "$status" "$detail" >/dev/null 2>&1 || true
 }
 
+notify_failure() {
+  local message="$1"
+  bash scripts/notify-publish-failure.sh "$message" >/dev/null 2>&1 || true
+}
+
+notify_success() {
+  local message="$1"
+  bash scripts/notify-publish-success.sh "$message" >/dev/null 2>&1 || true
+}
+
 fail() {
   local message="$1"
   log "ERROR: $message"
   record_status "failure" "$message"
+  notify_failure "$message"
   exit 1
 }
 
@@ -89,4 +100,5 @@ fi
 
 LAST_ACTION="complete"
 record_status "success" "Snapshot publish and deploy completed successfully"
+notify_success "Night Watch publish succeeded and production verified"
 log "Automation complete"
