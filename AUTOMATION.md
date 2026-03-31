@@ -102,6 +102,7 @@ On success, it sends a lightweight OpenClaw success event after production verif
 
 ## Safety notes
 - The live automation updates production data without a code deploy
+- Live published state is now written to a durable store under `/data/night-watch`
 - The legacy snapshot automation only stages/commits snapshot files in `src/data/`
 - Legacy snapshot automation does not auto-stage unrelated work
 - Live automation verifies production freshness by checking `lastRun`

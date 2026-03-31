@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getNightWatchData } from '@/lib/night-watch-data'
 
-function buildPreview() {
-  const { state, swarmState, swarmRecommendations, meta } = getNightWatchData()
+async function buildPreview() {
+  const { state, swarmState, swarmRecommendations, meta } = await getNightWatchData()
   const typedState = (state as Record<string, any>) ?? {}
   const typedSwarmState = (swarmState as Record<string, any>) ?? {}
   const typedRecommendations = (swarmRecommendations as Record<string, any>) ?? {}
@@ -28,13 +28,16 @@ function buildPreview() {
     ...((((typedRecommendations.items ?? []) as Array<Record<string, any>>).slice(0, 3)).map((item, idx) => `${idx + 1}. ${item.title} [${item.role}] score=${item.score ?? 'n/a'}`)),
   ]
 
-  return lines.join('\n')
+  return {
+    preview: lines.join('\n'),
+    meta,
+  }
 }
 
 export async function GET() {
-  const { meta } = getNightWatchData()
+  const { preview, meta } = await buildPreview()
   return NextResponse.json({
-    preview: buildPreview(),
+    preview,
     _meta: meta,
   })
 }

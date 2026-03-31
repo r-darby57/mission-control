@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { setLiveStore } from '@/data/live-night-watch-store'
+import { writeDurableNightWatchStore } from '@/lib/night-watch-store'
 
 export async function POST(request: NextRequest) {
   const expectedToken = process.env.NIGHT_WATCH_PUBLISH_TOKEN
@@ -16,19 +16,20 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
+  const updatedAt = new Date().toISOString()
 
-  setLiveStore({
+  await writeDurableNightWatchStore({
     state: body.state ?? null,
     trends: body.trends ?? null,
     swarmState: body.swarmState ?? null,
     swarmRecommendations: body.swarmRecommendations ?? null,
-    updatedAt: new Date().toISOString(),
+    updatedAt,
     source: 'live-publish',
   })
 
   return NextResponse.json({
     ok: true,
     source: 'live-publish',
-    updatedAt: new Date().toISOString(),
+    updatedAt,
   })
 }

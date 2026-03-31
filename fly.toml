@@ -20,3 +20,8 @@ primary_region = "iad"  # Washington DC region for lowest latency
 [env]
   NODE_ENV = "production"
   PORT = "3000"
+  NIGHT_WATCH_STORE_DIR = "/data/night-watch"
+
+[mounts]
+  source = "mission_control_data"
+  destination = "/data"
