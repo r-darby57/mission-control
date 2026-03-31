@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Search, Calendar, Tag, Filter, Clock, MessageSquare, Brain, FileText, Star } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Search, Calendar, Tag, Clock, MessageSquare, Brain, FileText, Star } from 'lucide-react'
 
 interface MemoryEntry {
   id: string
@@ -129,43 +129,28 @@ function MemoryCard({ entry }: { entry: MemoryEntry }) {
   const IconComponent = typeIcons[entry.type]
   
   return (
-    <div className={`
-      bg-slate-800 rounded-lg p-4 border-l-4 ${importanceColors[entry.importance]}
-      hover:bg-slate-700/50 transition-all duration-200
-    `}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <IconComponent className={`w-5 h-5 ${typeColors[entry.type]}`} />
-          <div>
-            <h3 className="font-semibold text-white text-sm">{entry.title}</h3>
-            <p className="text-xs text-slate-400">by {entry.agent}</p>
+    <div className={`bg-slate-800 rounded-xl p-4 border-l-4 ${importanceColors[entry.importance]} hover:bg-slate-700/50 transition-all duration-200`}>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <IconComponent className={`w-5 h-5 mt-0.5 shrink-0 ${typeColors[entry.type]}`} />
+          <div className="min-w-0">
+            <h3 className="font-semibold text-white text-sm leading-tight">{entry.title}</h3>
+            <p className="text-xs text-slate-400 mt-1">by {entry.agent}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-1 text-xs rounded ${importanceBadges[entry.importance]}`}>
-            {entry.importance.toUpperCase()}
-          </span>
-          <div className="text-xs text-slate-500 flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {new Date(entry.timestamp).toLocaleDateString()}
-          </div>
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <span className={`px-2 py-1 text-[10px] rounded ${importanceBadges[entry.importance]}`}>{entry.importance.toUpperCase()}</span>
+          <div className="text-[10px] text-slate-500 flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(entry.timestamp).toLocaleDateString()}</div>
         </div>
       </div>
       
-      <p className="text-slate-300 text-sm mb-3 leading-relaxed">
-        {entry.content}
-      </p>
+      <p className="text-slate-300 text-sm mb-3 leading-relaxed">{entry.content}</p>
       
       <div className="flex items-center gap-2">
-        <Tag className="w-3 h-3 text-slate-400" />
-        <div className="flex flex-wrap gap-1">
+        <Tag className="w-3 h-3 text-slate-400 shrink-0" />
+        <div className="flex flex-wrap gap-1.5">
           {entry.tags.map((tag) => (
-            <span 
-              key={tag}
-              className="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded hover:bg-slate-600 cursor-pointer transition-colors"
-            >
-              #{tag}
-            </span>
+            <span key={tag} className="px-2 py-1 bg-slate-700 text-slate-400 text-[10px] rounded hover:bg-slate-600 cursor-pointer transition-colors">#{tag}</span>
           ))}
         </div>
       </div>
@@ -178,7 +163,15 @@ export function MemoryArchive() {
   const [selectedType, setSelectedType] = useState<string>('all')
   const [selectedImportance, setSelectedImportance] = useState<string>('all')
   const [selectedAgent, setSelectedAgent] = useState<string>('all')
+  const [isMobile, setIsMobile] = useState(false)
   
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   const agents = [...new Set(memoryEntries.map(entry => entry.agent))]
   const types = ['conversation', 'decision', 'insight', 'task', 'briefing']
   const importanceLevels = ['low', 'medium', 'high', 'critical']
@@ -206,138 +199,60 @@ export function MemoryArchive() {
   }
   
   return (
-    <div className="bg-slate-900 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-blue-400 mb-2">
-            🧠 MEMORY ARCHIVE
-          </h2>
-          <p className="text-slate-400">
-            Searchable conversation history, decisions, and strategic insights
-          </p>
+    <div className="bg-slate-900 rounded-lg p-4 md:p-6">
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg md:text-2xl font-bold text-blue-400 mb-1 md:mb-2">🧠 MEMORY ARCHIVE</h2>
+            <p className="text-sm md:text-base text-slate-400">Searchable conversations, decisions, and strategic insights</p>
+          </div>
+          <div className="text-right text-sm shrink-0">
+            <div className="text-white font-bold">{filteredEntries.length}/{stats.total}</div>
+            <div className="text-slate-400 text-xs">{stats.critical} Critical</div>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right text-sm">
-            <div className="text-white font-bold">{filteredEntries.length}/{stats.total} Entries</div>
-            <div className="text-slate-400">{stats.critical} Critical</div>
+
+        <div className="bg-slate-800 rounded-xl p-4">
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5'} gap-3`}>
+            <div className={`${isMobile ? '' : 'lg:col-span-2'} relative`}>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search memories, decisions, insights..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="px-3 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 outline-none">
+              <option value="all">All Types</option>
+              {types.map(type => <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>)}
+            </select>
+            <select value={selectedImportance} onChange={(e) => setSelectedImportance(e.target.value)} className="px-3 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 outline-none">
+              <option value="all">All Importance</option>
+              {importanceLevels.map(level => <option key={level} value={level}>{level.charAt(0).toUpperCase() + level.slice(1)}</option>)}
+            </select>
+            <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} className="px-3 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 outline-none">
+              <option value="all">All Agents</option>
+              {agents.map(agent => <option key={agent} value={agent}>{agent}</option>)}
+            </select>
           </div>
         </div>
       </div>
       
-      {/* Search and Filters */}
-      <div className="bg-slate-800 rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {/* Search */}
-          <div className="lg:col-span-2 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search memories, decisions, insights..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-            />
-          </div>
-          
-          {/* Type Filter */}
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 outline-none"
-          >
-            <option value="all">All Types</option>
-            {types.map(type => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-          
-          {/* Importance Filter */}
-          <select
-            value={selectedImportance}
-            onChange={(e) => setSelectedImportance(e.target.value)}
-            className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 outline-none"
-          >
-            <option value="all">All Importance</option>
-            {importanceLevels.map(level => (
-              <option key={level} value={level}>
-                {level.charAt(0).toUpperCase() + level.slice(1)}
-              </option>
-            ))}
-          </select>
-          
-          {/* Agent Filter */}
-          <select
-            value={selectedAgent}
-            onChange={(e) => setSelectedAgent(e.target.value)}
-            className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 outline-none"
-          >
-            <option value="all">All Agents</option>
-            {agents.map(agent => (
-              <option key={agent} value={agent}>
-                {agent}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="bg-slate-800/50 rounded-lg p-3 text-center"><div className="text-2xl font-bold text-blue-400">{stats.total}</div><div className="text-xs text-slate-400">Total</div></div>
+        <div className="bg-slate-800/50 rounded-lg p-3 text-center"><div className="text-2xl font-bold text-red-400">{stats.critical}</div><div className="text-xs text-slate-400">Critical</div></div>
+        <div className="bg-slate-800/50 rounded-lg p-3 text-center"><div className="text-2xl font-bold text-yellow-400">{stats.decisions}</div><div className="text-xs text-slate-400">Decisions</div></div>
+        <div className="bg-slate-800/50 rounded-lg p-3 text-center"><div className="text-2xl font-bold text-purple-400">{stats.insights}</div><div className="text-xs text-slate-400">Insights</div></div>
       </div>
       
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-blue-400">{stats.total}</div>
-          <div className="text-xs text-slate-400">Total Memories</div>
-        </div>
-        <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-red-400">{stats.critical}</div>
-          <div className="text-xs text-slate-400">Critical Entries</div>
-        </div>
-        <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-yellow-400">{stats.decisions}</div>
-          <div className="text-xs text-slate-400">Key Decisions</div>
-        </div>
-        <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-purple-400">{stats.insights}</div>
-          <div className="text-xs text-slate-400">Strategic Insights</div>
-        </div>
-      </div>
-      
-      {/* Memory Entries */}
       <div className="space-y-4">
         {filteredEntries.length === 0 ? (
-          <div className="text-center py-12">
-            <Brain className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-400 mb-2">No memories found</h3>
-            <p className="text-slate-500">Try adjusting your search or filters</p>
-          </div>
+          <div className="text-center py-12"><Brain className="w-16 h-16 text-slate-600 mx-auto mb-4" /><h3 className="text-lg font-semibold text-slate-400 mb-2">No memories found</h3><p className="text-slate-500">Try adjusting your search or filters</p></div>
         ) : (
-          filteredEntries
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-            .map(entry => (
-              <MemoryCard key={entry.id} entry={entry} />
-            ))
+          filteredEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(entry => <MemoryCard key={entry.id} entry={entry} />)
         )}
-      </div>
-      
-      {/* Export Options */}
-      <div className="mt-6 pt-4 border-t border-slate-700">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-slate-400">
-            Memory system operational since March 29, 2026
-          </div>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 text-xs bg-slate-700 text-slate-300 rounded hover:bg-slate-600 transition-colors">
-              Export JSON
-            </button>
-            <button className="px-3 py-1 text-xs bg-slate-700 text-slate-300 rounded hover:bg-slate-600 transition-colors">
-              Backup
-            </button>
-            <button className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-              Search API
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   )
