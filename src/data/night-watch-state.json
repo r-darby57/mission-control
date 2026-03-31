@@ -1,0 +1,39 @@
+{
+  "lastRun": "2026-03-31T07:24:58.775348",
+  "lastTask": {
+    "type": "security-review",
+    "status": "healthy",
+    "score": 85,
+    "findings": [
+      "ops health=healthy, model=openai-codex/gpt-5.4, reason=primary healthy",
+      "failsafe status=healthy, mode=auto, current=openai-codex/gpt-5.4"
+    ],
+    "recommendation": "Keep firewall/stealth enabled and monitor failover + gateway status."
+  },
+  "lastStatus": "healthy",
+  "lastReport": "reports/night-watch-2026-03-31-072458.md",
+  "currentMode": "safe-internal",
+  "missionSwarm": {
+    "lastRun": "2026-03-31T07:24:58.768166",
+    "lastStatus": "completed",
+    "topRecommendation": {
+      "id": "swarm-001",
+      "title": "Add Mission Swarm summary cards to Night Watch dashboard",
+      "role": "product-strategist",
+      "summary": "Expose the top recommendation, builder status, and role consensus in one glance.",
+      "score": 92,
+      "reasoning": "Highest operator value with minimal UI complexity."
+    },
+    "lastSafeBuilderAction": {
+      "status": "advisory-ready",
+      "summary": "Ready to implement next bounded change: Add Mission Swarm summary cards to Night Watch dashboard",
+      "scope": [
+        "mission-control-ui",
+        "night-watch-reporting",
+        "internal-readonly-analysis"
+      ],
+      "validation": "Run project build before claiming success."
+    },
+    "lastReport": "reports/mission-swarm-2026-03-31-072458.md"
+  }
+}

@@ -10,6 +10,7 @@ import { DailyIntelBrief } from './daily-intel-brief'
 import { AccountabilityAlerts } from './accountability-alerts'
 import { OperationsStatus } from './operations-status'
 import { ModernMobileDashboard } from './modern-mobile-dashboard'
+import { NightWatchDashboard } from './night-watch-dashboard'
 
 interface Tab {
   id: string
@@ -59,6 +60,12 @@ const tabs: Tab[] = [
     label: 'Memory Archive',
     icon: '🧠',
     component: MemoryArchive
+  },
+  {
+    id: 'night-watch',
+    label: 'Night Watch',
+    icon: '🌙',
+    component: NightWatchDashboard
   }
 ]
 
@@ -66,7 +73,6 @@ export function TabbedInterface() {
   const [activeTab, setActiveTab] = useState('overview')
   const [isMobile, setIsMobile] = useState(false)
   
-  // Detect mobile screen size
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -77,7 +83,6 @@ export function TabbedInterface() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
   
-  // On mobile, show modern optimized dashboard for overview tab
   if (isMobile && activeTab === 'overview') {
     return <ModernMobileDashboard />
   }
@@ -88,7 +93,6 @@ export function TabbedInterface() {
   return (
     <div className="min-h-screen bg-slate-950 text-white p-3 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -118,7 +122,6 @@ export function TabbedInterface() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
         <div className="mb-6">
           <div className="flex gap-1 bg-slate-900 p-1 rounded-lg overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
@@ -140,12 +143,10 @@ export function TabbedInterface() {
           </div>
         </div>
 
-        {/* Active Tab Content */}
         <div className="transition-all duration-300">
           <ActiveComponent />
         </div>
 
-        {/* System Status Bar */}
         <div className="mt-6 p-3 md:p-4 bg-slate-900 rounded-lg">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-slate-400">
@@ -159,9 +160,8 @@ export function TabbedInterface() {
                 <span>5 Agents Active</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full" />
-                <span className="hidden sm:inline">Uptime: 48h Guaranteed</span>
-                <span className="sm:hidden">48h Up</span>
+                <div className="w-2 h-2 bg-indigo-400 rounded-full" />
+                <span>Night Watch Active</span>
               </div>
             </div>
             <div className="flex gap-2 overflow-x-auto">
@@ -175,30 +175,6 @@ export function TabbedInterface() {
                 Export
               </button>
             </div>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-slate-900/50 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-green-400">94%</div>
-            <div className="text-xs text-slate-400">System Health</div>
-          </div>
-          <div className="bg-slate-900/50 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-blue-400">12</div>
-            <div className="text-xs text-slate-400">Active Tasks</div>
-          </div>
-          <div className="bg-slate-900/50 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-yellow-400">7</div>
-            <div className="text-xs text-slate-400">Memory Entries</div>
-          </div>
-          <div className="bg-slate-900/50 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-purple-400">8</div>
-            <div className="text-xs text-slate-400">Scheduled Events</div>
-          </div>
-          <div className="bg-slate-900/50 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-red-400">2</div>
-            <div className="text-xs text-slate-400">Critical Alerts</div>
           </div>
         </div>
       </div>

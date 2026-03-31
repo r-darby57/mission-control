@@ -1,0 +1,95 @@
+{
+  "generatedAt": "2026-03-31T07:24:58.768206",
+  "topRecommendation": {
+    "id": "swarm-001",
+    "title": "Add Mission Swarm summary cards to Night Watch dashboard",
+    "role": "product-strategist",
+    "summary": "Expose the top recommendation, builder status, and role consensus in one glance.",
+    "score": 92,
+    "reasoning": "Highest operator value with minimal UI complexity."
+  },
+  "roleOutputs": {
+    "product-strategist": {
+      "id": "swarm-001",
+      "title": "Add Mission Swarm summary cards to Night Watch dashboard",
+      "role": "product-strategist",
+      "summary": "Expose the top recommendation, builder status, and role consensus in one glance.",
+      "score": 92,
+      "reasoning": "Highest operator value with minimal UI complexity."
+    },
+    "ux-critic": {
+      "id": "swarm-003",
+      "title": "Refine mobile density for Night Watch and Swarm cards",
+      "role": "ux-critic",
+      "summary": "Reduce text wall behavior on mobile and tighten card hierarchy.",
+      "score": 78,
+      "reasoning": "Useful quality improvement, but less urgent than decision visibility."
+    },
+    "engineering-reviewer": {
+      "id": "swarm-004",
+      "title": "Add validation reporting for safe builder changes",
+      "role": "engineering-reviewer",
+      "summary": "Display which build or test command was used after a safe builder action.",
+      "score": 88,
+      "reasoning": "Trust goes up when changes show receipts."
+    },
+    "security-reviewer": {
+      "id": "swarm-005",
+      "title": "Keep safe builder limited to bounded internal UI/reporting changes",
+      "role": "security-reviewer",
+      "summary": "Do not allow architecture rewrites or sensitive system modifications in automated mode.",
+      "score": 90,
+      "reasoning": "Prevents overnight chaos goblin behavior."
+    },
+    "operator-prioritizer": {
+      "id": "swarm-002",
+      "title": "Show recommendation history and trend of repeated issues",
+      "role": "operator-prioritizer",
+      "summary": "Track whether the same problems keep surfacing night after night.",
+      "score": 84,
+      "reasoning": "Improves compounding value and prevents recommendation amnesia."
+    }
+  },
+  "items": [
+    {
+      "id": "swarm-001",
+      "title": "Add Mission Swarm summary cards to Night Watch dashboard",
+      "role": "product-strategist",
+      "summary": "Expose the top recommendation, builder status, and role consensus in one glance.",
+      "score": 92,
+      "reasoning": "Highest operator value with minimal UI complexity."
+    },
+    {
+      "id": "swarm-005",
+      "title": "Keep safe builder limited to bounded internal UI/reporting changes",
+      "role": "security-reviewer",
+      "summary": "Do not allow architecture rewrites or sensitive system modifications in automated mode.",
+      "score": 90,
+      "reasoning": "Prevents overnight chaos goblin behavior."
+    },
+    {
+      "id": "swarm-004",
+      "title": "Add validation reporting for safe builder changes",
+      "role": "engineering-reviewer",
+      "summary": "Display which build or test command was used after a safe builder action.",
+      "score": 88,
+      "reasoning": "Trust goes up when changes show receipts."
+    },
+    {
+      "id": "swarm-002",
+      "title": "Show recommendation history and trend of repeated issues",
+      "role": "operator-prioritizer",
+      "summary": "Track whether the same problems keep surfacing night after night.",
+      "score": 84,
+      "reasoning": "Improves compounding value and prevents recommendation amnesia."
+    },
+    {
+      "id": "swarm-003",
+      "title": "Refine mobile density for Night Watch and Swarm cards",
+      "role": "ux-critic",
+      "summary": "Reduce text wall behavior on mobile and tighten card hierarchy.",
+      "score": 78,
+      "reasoning": "Useful quality improvement, but less urgent than decision visibility."
+    }
+  ]
+}
