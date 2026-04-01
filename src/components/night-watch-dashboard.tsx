@@ -110,6 +110,16 @@ function NightWatchCard({ title, accent, meta, children }: { title: string; acce
   )
 }
 
+function formatTs(ts?: string | null) {
+  if (!ts) return 'unknown'
+  return new Date(ts).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 export function NightWatchDashboard() {
   const [state, setState] = useState<NightWatchState>(fallbackState)
   const [reportPreview, setReportPreview] = useState<string>('No report loaded yet.')
@@ -189,6 +199,30 @@ export function NightWatchDashboard() {
     return swarmHistory.filter((item) => item.topRecommendation === title).length
   }, [swarmHistory, swarm.state?.lastRecommendation?.title, state.missionSwarm?.topRecommendation?.title])
 
+  const eventAnalytics = useMemo(() => {
+    if (swarmEvents.length === 0) {
+      return {
+        avgConsensus: null as number | null,
+        avgSpread: null as number | null,
+        repeatCount: 0,
+        validationPattern: 'No validation receipts yet.',
+      }
+    }
+
+    const consensusValues = swarmEvents.map((item) => item.consensusAverage).filter((value): value is number => typeof value === 'number')
+    const spreadValues = swarmEvents.map((item) => item.consensusSpread).filter((value): value is number => typeof value === 'number')
+    const topTitle = swarmEvents[0]?.topRecommendationTitle
+    const repeatCount = topTitle ? swarmEvents.filter((item) => item.topRecommendationTitle === topTitle).length : 0
+    const validationPattern = swarmEvents[0]?.safeBuilderValidation || 'No validation receipts yet.'
+
+    return {
+      avgConsensus: consensusValues.length ? Math.round(consensusValues.reduce((acc, value) => acc + value, 0) / consensusValues.length) : null,
+      avgSpread: spreadValues.length ? Math.round(spreadValues.reduce((acc, value) => acc + value, 0) / spreadValues.length) : null,
+      repeatCount,
+      validationPattern,
+    }
+  }, [swarmEvents])
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
@@ -243,6 +277,33 @@ export function NightWatchDashboard() {
           </div>
         </NightWatchCard>
 
+        <NightWatchCard title="📈 Swarm Analytics" meta="operator trust" accent="ring-1 ring-amber-500/10">
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">avg consensus</div>
+              <div className="text-lg font-bold text-amber-300 mt-1">{eventAnalytics.avgConsensus ?? 'n/a'}</div>
+              <div className="text-[11px] text-slate-500 mt-1">across durable events</div>
+            </div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">avg disagreement</div>
+              <div className="text-lg font-bold text-rose-300 mt-1">{eventAnalytics.avgSpread ?? 'n/a'}</div>
+              <div className="text-[11px] text-slate-500 mt-1">consensus spread</div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">repeat pressure</div>
+              <div className="text-sm text-white font-semibold mt-1">{eventAnalytics.repeatCount} recent event(s) repeating the current top recommendation</div>
+            </div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">current validation pattern</div>
+              <div className="text-sm text-slate-200 mt-1">{eventAnalytics.validationPattern}</div>
+            </div>
+          </div>
+        </NightWatchCard>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
         <NightWatchCard title="🧾 Builder Receipts" meta="trust layer" accent="ring-1 ring-emerald-500/10">
           <div className="space-y-3">
             <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
@@ -257,11 +318,13 @@ export function NightWatchDashboard() {
               <div className="text-xs text-slate-400">operator summary</div>
               <div className="text-sm text-slate-200 mt-1">{swarm.state?.lastSafeBuilderAction?.summary || state.missionSwarm?.lastSafeBuilderAction?.summary || 'No operator summary recorded.'}</div>
             </div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">declared scope</div>
+              <div className="text-sm text-slate-200 mt-1">{(swarm.state?.lastSafeBuilderAction?.scope || state.missionSwarm?.lastSafeBuilderAction?.scope || []).join(', ') || 'No scope declared.'}</div>
+            </div>
           </div>
         </NightWatchCard>
-      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
         <NightWatchCard title="🏅 Swarm Recommendations" meta={`${swarmItems.length} queued`} accent="ring-1 ring-orange-500/10">
           <div className="space-y-3">
             {swarmItems.length === 0 ? (
@@ -277,7 +340,9 @@ export function NightWatchDashboard() {
             )}
           </div>
         </NightWatchCard>
+      </div>
 
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
         <NightWatchCard title="🤝 Role Consensus" meta={`${Object.keys(roleOutputs).length} roles`} accent="ring-1 ring-violet-500/10">
           <div className="space-y-3">
             {Object.entries(roleOutputs).length === 0 ? (
@@ -296,44 +361,24 @@ export function NightWatchDashboard() {
             )}
           </div>
         </NightWatchCard>
-      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-        <NightWatchCard title="🕘 Swarm History" meta={`${swarmHistory.length} runs`} accent="ring-1 ring-blue-500/10">
+        <NightWatchCard title="🕘 Swarm Timeline" meta={`${swarmEvents.length || swarmHistory.length} checkpoints`} accent="ring-1 ring-blue-500/10">
           <div className="space-y-3">
-            {swarmHistory.length === 0 ? (
-              <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30 text-sm text-slate-300">No swarm history recorded yet.</div>
-            ) : (
-              swarmHistory.slice().reverse().slice(0, 6).map((item, idx) => (
-                <div key={`${item.ts || 'unknown'}-${idx}`} className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+            {(swarmEvents.length > 0 ? swarmEvents : swarmHistory.slice().reverse()).slice(0, 6).map((item: any, idx) => (
+              <div key={`${item.ts || 'unknown'}-${idx}`} className="relative pl-5">
+                <div className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-blue-400" />
+                <div className="absolute left-[4px] top-4 bottom-[-12px] w-px bg-slate-800 last:hidden" />
+                <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm text-white font-semibold">{item.topRecommendation || 'Unknown recommendation'}</div>
-                    <div className="text-xs text-slate-400 whitespace-nowrap">{item.status || 'unknown'}</div>
+                    <div className="text-sm text-white font-semibold">{item.topRecommendationTitle || item.topRecommendation || 'Unknown recommendation'}</div>
+                    <div className="text-xs text-slate-400 whitespace-nowrap">{item.swarmStatus || item.status || 'unknown'}</div>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-2">{item.ts || 'Unknown timestamp'}</div>
+                  <div className="text-[11px] text-slate-500 mt-2">{formatTs(item.ts)}</div>
+                  {'consensusAverage' in item ? <div className="text-xs text-cyan-300 mt-2">consensus {item.consensusAverage ?? 'n/a'} / spread {item.consensusSpread ?? 'n/a'}</div> : null}
+                  {'safeBuilderValidation' in item ? <div className="text-[11px] text-slate-400 mt-2">{item.safeBuilderValidation || 'No validation receipt recorded.'}</div> : null}
                 </div>
-              ))
-            )}
-          </div>
-        </NightWatchCard>
-
-        <NightWatchCard title="📚 Event Log" meta={`${swarmEvents.length} durable events`} accent="ring-1 ring-emerald-500/10">
-          <div className="space-y-3">
-            {swarmEvents.length === 0 ? (
-              <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30 text-sm text-slate-300">No durable swarm events recorded yet.</div>
-            ) : (
-              swarmEvents.slice(0, 6).map((item, idx) => (
-                <div key={`${item.ts || 'unknown'}-${idx}`} className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm text-white font-semibold">{item.topRecommendationTitle || 'Unknown recommendation'}</div>
-                    <div className="text-xs font-mono text-emerald-300 whitespace-nowrap">{item.consensusAverage ?? 'n/a'}</div>
-                  </div>
-                  <div className="text-xs text-slate-400 mt-2">status: {item.swarmStatus || 'unknown'} • builder: {item.safeBuilderStatus || 'unknown'}</div>
-                  <div className="text-xs text-slate-500 mt-2">{item.ts || 'Unknown timestamp'}</div>
-                  <div className="text-[11px] text-slate-400 mt-2">{item.safeBuilderValidation || 'No validation receipt recorded.'}</div>
-                </div>
-              ))
-            )}
+              </div>
+            ))}
           </div>
         </NightWatchCard>
       </div>
