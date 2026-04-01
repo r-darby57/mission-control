@@ -1,7 +1,10 @@
 import { readFile } from 'node:fs/promises'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+const execFileAsync = promisify(execFile)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
@@ -20,11 +23,28 @@ async function loadJson(relativePath) {
   return JSON.parse(await readFile(fullPath, 'utf8'))
 }
 
+async function loadCronStatus() {
+  try {
+    const { stdout } = await execFileAsync('openclaw', ['cron', 'list', '--json'], {
+      cwd: workspaceRoot,
+      timeout: 15000,
+      maxBuffer: 1024 * 1024,
+    })
+    return JSON.parse(stdout)
+  } catch (error) {
+    return {
+      jobs: [],
+      error: error instanceof Error ? error.message : 'Failed to read cron status',
+    }
+  }
+}
+
 const payload = {
   state: await loadJson(path.join('night-watch', 'state.json')),
   trends: await loadJson(path.join('night-watch', 'trends.json')),
   swarmState: await loadJson(path.join('night-watch', 'mission-swarm', 'state.json')),
   swarmRecommendations: await loadJson(path.join('night-watch', 'mission-swarm', 'recommendations.json')),
+  cronStatus: await loadCronStatus(),
 }
 
 const response = await fetch(publishUrl, {

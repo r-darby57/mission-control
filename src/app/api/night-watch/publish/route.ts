@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
     trends: body.trends ?? null,
     swarmState: body.swarmState ?? null,
     swarmRecommendations: body.swarmRecommendations ?? null,
+    cronStatus: body.cronStatus ?? { jobs: [] },
     updatedAt,
     source: 'live-publish',
   })

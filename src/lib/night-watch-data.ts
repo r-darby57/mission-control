@@ -12,6 +12,7 @@ export async function getNightWatchData() {
     trends: live.trends ?? snapshotTrends,
     swarmState: live.swarmState ?? snapshotSwarmState,
     swarmRecommendations: live.swarmRecommendations ?? snapshotSwarmRecommendations,
+    cronStatus: live.cronStatus ?? { jobs: [] },
     meta: {
       source: live.source || 'snapshot',
       updatedAt: live.updatedAt || null,

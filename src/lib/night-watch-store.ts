@@ -10,6 +10,7 @@ type LiveStorePayload = {
   trends: unknown
   swarmState: unknown
   swarmRecommendations: unknown
+  cronStatus?: unknown
   updatedAt: string
   source: string
 }
@@ -36,6 +37,7 @@ const fallbackPayload: LiveStorePayload = {
   trends: null,
   swarmState: null,
   swarmRecommendations: null,
+  cronStatus: { jobs: [] },
   updatedAt: '',
   source: 'snapshot',
 }
