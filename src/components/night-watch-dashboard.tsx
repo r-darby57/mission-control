@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface NightWatchState {
   lastRun: string | null
@@ -40,34 +40,54 @@ interface TrendItem {
   action?: string
 }
 
+interface SwarmRecommendationItem {
+  id?: string
+  title?: string
+  role?: string
+  score?: number
+  summary?: string
+  reasoning?: string
+}
+
 interface SwarmPayload {
   state?: {
     lastRun?: string | null
     lastStatus?: string
-    lastRecommendation?: {
-      title?: string
-      role?: string
-      score?: number
-      summary?: string
-      reasoning?: string
-    } | null
+    lastRecommendation?: SwarmRecommendationItem | null
     lastSafeBuilderAction?: {
       status?: string
       summary?: string
       validation?: string
       scope?: string[]
     } | null
-  }
-  recommendations?: {
-    items?: Array<{
-      id?: string
-      title?: string
-      role?: string
-      score?: number
-      summary?: string
-      reasoning?: string
+    history?: Array<{
+      ts?: string
+      topRecommendation?: string
+      status?: string
     }>
   }
+  recommendations?: {
+    generatedAt?: string
+    topRecommendation?: SwarmRecommendationItem
+    roleOutputs?: Record<string, SwarmRecommendationItem>
+    items?: SwarmRecommendationItem[]
+  }
+}
+
+interface SwarmEventItem {
+  ts?: string
+  source?: string
+  nightWatchLastRun?: string | null
+  swarmLastRun?: string | null
+  swarmStatus?: string | null
+  topRecommendationTitle?: string | null
+  topRecommendationScore?: number | null
+  consensusAverage?: number | null
+  consensusSpread?: number | null
+  safeBuilderStatus?: string | null
+  safeBuilderSummary?: string | null
+  safeBuilderValidation?: string | null
+  safeBuilderScope?: string[]
 }
 
 const fallbackState: NightWatchState = {
@@ -95,6 +115,7 @@ export function NightWatchDashboard() {
   const [reportPreview, setReportPreview] = useState<string>('No report loaded yet.')
   const [trends, setTrends] = useState<TrendItem[]>([])
   const [swarm, setSwarm] = useState<SwarmPayload>({ recommendations: { items: [] } })
+  const [swarmEvents, setSwarmEvents] = useState<SwarmEventItem[]>([])
 
   useEffect(() => {
     async function loadNightWatch() {
@@ -129,10 +150,44 @@ export function NightWatchDashboard() {
           setSwarm(swarmJson)
         }
       } catch {}
+
+      try {
+        const eventsRes = await fetch('/api/night-watch/events')
+        if (eventsRes.ok) {
+          const eventsJson = await eventsRes.json()
+          setSwarmEvents(eventsJson.items || [])
+        }
+      } catch {}
     }
 
     loadNightWatch()
   }, [])
+
+  const swarmHistory = swarm.state?.history || []
+  const swarmItems = swarm.recommendations?.items || []
+  const roleOutputs = swarm.recommendations?.roleOutputs || {}
+
+  const consensus = useMemo(() => {
+    const scores = Object.values(roleOutputs)
+      .map((item) => item.score)
+      .filter((score): score is number => typeof score === 'number')
+
+    if (scores.length === 0) {
+      return { average: null, spread: null, label: 'unknown' }
+    }
+
+    const average = Math.round(scores.reduce((acc, score) => acc + score, 0) / scores.length)
+    const spread = Math.max(...scores) - Math.min(...scores)
+    const label = spread <= 6 ? 'tight alignment' : spread <= 12 ? 'healthy debate' : 'divergent views'
+
+    return { average, spread, label }
+  }, [roleOutputs])
+
+  const recurrence = useMemo(() => {
+    const title = swarm.state?.lastRecommendation?.title || state.missionSwarm?.topRecommendation?.title
+    if (!title) return 0
+    return swarmHistory.filter((item) => item.topRecommendation === title).length
+  }, [swarmHistory, swarm.state?.lastRecommendation?.title, state.missionSwarm?.topRecommendation?.title])
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -159,30 +214,60 @@ export function NightWatchDashboard() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-        <NightWatchCard title="🔍 Latest Findings" accent="ring-1 ring-green-500/10">
+        <NightWatchCard title="🧠 Mission Swarm" meta={swarm.state?.lastStatus || state.missionSwarm?.lastStatus || 'idle'} accent="ring-1 ring-cyan-500/10">
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">consensus score</div>
+              <div className="text-lg font-bold text-cyan-300 mt-1">{consensus.average ?? 'n/a'}</div>
+              <div className="text-[11px] text-slate-500 mt-1">{consensus.label}</div>
+            </div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">recurrence</div>
+              <div className="text-lg font-bold text-orange-300 mt-1">{recurrence}x</div>
+              <div className="text-[11px] text-slate-500 mt-1">same top recommendation</div>
+            </div>
+          </div>
+
           <div className="space-y-3">
-            {(state.lastTask?.findings || ['No findings available yet.']).map((finding, idx) => (
-              <div key={idx} className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30 text-sm text-slate-200">{finding}</div>
-            ))}
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">top recommendation</div>
+              <div className="text-sm text-white font-semibold mt-1">{swarm.state?.lastRecommendation?.title || state.missionSwarm?.topRecommendation?.title || 'No recommendation yet.'}</div>
+              <div className="text-xs text-blue-300 mt-2">{swarm.state?.lastRecommendation?.summary || state.missionSwarm?.topRecommendation?.summary || 'Waiting for first advisory cycle.'}</div>
+            </div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">safe builder</div>
+              <div className="text-sm text-white mt-1">{swarm.state?.lastSafeBuilderAction?.summary || state.missionSwarm?.lastSafeBuilderAction?.summary || 'Safe Builder not ready yet.'}</div>
+              <div className="text-xs text-slate-400 mt-2">validation: {swarm.state?.lastSafeBuilderAction?.validation || state.missionSwarm?.lastSafeBuilderAction?.validation || 'Validation rules pending.'}</div>
+              <div className="text-xs text-slate-500 mt-2">scope: {(swarm.state?.lastSafeBuilderAction?.scope || state.missionSwarm?.lastSafeBuilderAction?.scope || []).join(', ') || 'no scope declared'}</div>
+            </div>
           </div>
         </NightWatchCard>
 
-        <NightWatchCard title="🧠 Mission Swarm" accent="ring-1 ring-cyan-500/10">
+        <NightWatchCard title="🧾 Builder Receipts" meta="trust layer" accent="ring-1 ring-emerald-500/10">
           <div className="space-y-3">
-            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30"><div className="text-xs text-slate-400">status</div><div className="text-sm text-white font-semibold mt-1">{swarm.state?.lastStatus || state.missionSwarm?.lastStatus || 'idle'}</div></div>
-            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30"><div className="text-xs text-slate-400">top recommendation</div><div className="text-sm text-white font-semibold mt-1">{swarm.state?.lastRecommendation?.title || state.missionSwarm?.topRecommendation?.title || 'No recommendation yet.'}</div><div className="text-xs text-blue-300 mt-2">{swarm.state?.lastRecommendation?.summary || state.missionSwarm?.topRecommendation?.summary || 'Waiting for first advisory cycle.'}</div></div>
-            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30"><div className="text-xs text-slate-400">safe builder</div><div className="text-sm text-white mt-1">{swarm.state?.lastSafeBuilderAction?.summary || state.missionSwarm?.lastSafeBuilderAction?.summary || 'Safe Builder not ready yet.'}</div><div className="text-xs text-slate-400 mt-2">{swarm.state?.lastSafeBuilderAction?.validation || state.missionSwarm?.lastSafeBuilderAction?.validation || 'Validation rules pending.'}</div></div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">last action status</div>
+              <div className="text-sm text-white font-semibold mt-1">{swarm.state?.lastSafeBuilderAction?.status || state.missionSwarm?.lastSafeBuilderAction?.status || 'unknown'}</div>
+            </div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">validation receipt</div>
+              <div className="text-sm text-slate-200 mt-1">{swarm.state?.lastSafeBuilderAction?.validation || state.missionSwarm?.lastSafeBuilderAction?.validation || 'No validation receipt recorded.'}</div>
+            </div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">operator summary</div>
+              <div className="text-sm text-slate-200 mt-1">{swarm.state?.lastSafeBuilderAction?.summary || state.missionSwarm?.lastSafeBuilderAction?.summary || 'No operator summary recorded.'}</div>
+            </div>
           </div>
         </NightWatchCard>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-        <NightWatchCard title="🏅 Swarm Recommendations" accent="ring-1 ring-orange-500/10">
+        <NightWatchCard title="🏅 Swarm Recommendations" meta={`${swarmItems.length} queued`} accent="ring-1 ring-orange-500/10">
           <div className="space-y-3">
-            {(swarm.recommendations?.items || []).length === 0 ? (
+            {swarmItems.length === 0 ? (
               <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30 text-sm text-slate-300">No swarm recommendations loaded yet.</div>
             ) : (
-              (swarm.recommendations?.items || []).slice(0, 5).map((item, idx) => (
+              swarmItems.slice(0, 5).map((item, idx) => (
                 <div key={item.id || idx} className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
                   <div className="flex items-center justify-between gap-3"><div className="text-sm text-white font-semibold">{item.title || 'Untitled recommendation'}</div><div className="text-xs font-mono text-orange-300 whitespace-nowrap">score {item.score ?? 'n/a'}</div></div>
                   <div className="text-xs text-slate-400 mt-1">{item.role || 'unknown role'}</div>
@@ -193,7 +278,68 @@ export function NightWatchDashboard() {
           </div>
         </NightWatchCard>
 
-        <NightWatchCard title="📡 Trend Radar" accent="ring-1 ring-purple-500/10">
+        <NightWatchCard title="🤝 Role Consensus" meta={`${Object.keys(roleOutputs).length} roles`} accent="ring-1 ring-violet-500/10">
+          <div className="space-y-3">
+            {Object.entries(roleOutputs).length === 0 ? (
+              <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30 text-sm text-slate-300">No role outputs loaded yet.</div>
+            ) : (
+              Object.entries(roleOutputs).map(([role, item]) => (
+                <div key={role} className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm text-white font-semibold">{role}</div>
+                    <div className="text-xs font-mono text-violet-300">{item.score ?? 'n/a'}</div>
+                  </div>
+                  <div className="text-xs text-slate-300 mt-2">{item.title || 'No title provided.'}</div>
+                  <div className="text-[11px] text-slate-500 mt-2">{item.reasoning || 'No reasoning provided.'}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </NightWatchCard>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+        <NightWatchCard title="🕘 Swarm History" meta={`${swarmHistory.length} runs`} accent="ring-1 ring-blue-500/10">
+          <div className="space-y-3">
+            {swarmHistory.length === 0 ? (
+              <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30 text-sm text-slate-300">No swarm history recorded yet.</div>
+            ) : (
+              swarmHistory.slice().reverse().slice(0, 6).map((item, idx) => (
+                <div key={`${item.ts || 'unknown'}-${idx}`} className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm text-white font-semibold">{item.topRecommendation || 'Unknown recommendation'}</div>
+                    <div className="text-xs text-slate-400 whitespace-nowrap">{item.status || 'unknown'}</div>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-2">{item.ts || 'Unknown timestamp'}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </NightWatchCard>
+
+        <NightWatchCard title="📚 Event Log" meta={`${swarmEvents.length} durable events`} accent="ring-1 ring-emerald-500/10">
+          <div className="space-y-3">
+            {swarmEvents.length === 0 ? (
+              <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30 text-sm text-slate-300">No durable swarm events recorded yet.</div>
+            ) : (
+              swarmEvents.slice(0, 6).map((item, idx) => (
+                <div key={`${item.ts || 'unknown'}-${idx}`} className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm text-white font-semibold">{item.topRecommendationTitle || 'Unknown recommendation'}</div>
+                    <div className="text-xs font-mono text-emerald-300 whitespace-nowrap">{item.consensusAverage ?? 'n/a'}</div>
+                  </div>
+                  <div className="text-xs text-slate-400 mt-2">status: {item.swarmStatus || 'unknown'} • builder: {item.safeBuilderStatus || 'unknown'}</div>
+                  <div className="text-xs text-slate-500 mt-2">{item.ts || 'Unknown timestamp'}</div>
+                  <div className="text-[11px] text-slate-400 mt-2">{item.safeBuilderValidation || 'No validation receipt recorded.'}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </NightWatchCard>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+        <NightWatchCard title="📡 Trend Radar" meta={`${trends.length} signals`} accent="ring-1 ring-purple-500/10">
           <div className="space-y-3">
             {trends.length === 0 ? (
               <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30 text-sm text-slate-300">No trend items loaded yet. Trend Radar scaffolding is ready.</div>
