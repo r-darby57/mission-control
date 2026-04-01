@@ -85,7 +85,20 @@ export function CronOpsCard() {
   return (
     <div className="bg-slate-900 border border-slate-700 rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-cyan-400">⏱️ CRON OPS</h2>
+        <div>
+          <h2 className="text-xl font-bold text-cyan-400">⏱️ CRON OPS</h2>
+          {summary.failing > 0 ? (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-300">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              Degraded automation detected
+            </div>
+          ) : (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-300">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Automation healthy
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2 text-sm text-cyan-300">
           <Clock3 className="w-4 h-4" />
           <span>{summary.total} jobs</span>
