@@ -1,6 +1,7 @@
 'use client'
 
 import { Bot, Activity, Zap, Database, Globe, Shield } from 'lucide-react'
+import { CronOpsCard } from './cron-ops-card'
 
 interface Agent {
   id: string
@@ -265,6 +266,10 @@ export function OperationsStatus() {
             <div className="text-xs text-slate-400">System Uptime</div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <CronOpsCard />
       </div>
     </div>
   )
