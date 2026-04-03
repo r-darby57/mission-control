@@ -1,13 +1,13 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight, LayoutGrid, Radar, ShieldAlert, Cpu } from 'lucide-react'
-import { GoalProgressDashboard } from './goal-progress-dashboard'
+import { ChevronDown, ChevronRight, LayoutGrid, Radar, Moon, Cpu } from 'lucide-react'
 import { DailyIntelBrief } from './daily-intel-brief'
-import { AccountabilityAlerts } from './accountability-alerts'
 import { OperationsStatus } from './operations-status'
+import { AgentOfficeView } from './agent-office-view'
+import { NightWatchDashboard } from './night-watch-dashboard'
 
-type MobileView = 'overview' | 'intel' | 'alerts' | 'ops'
+type MobileView = 'overview' | 'intel' | 'ops' | 'night-watch'
 
 interface MobileTab {
   id: MobileView
@@ -36,7 +36,7 @@ function MobileSection({ title, subtitle, icon, accent, defaultOpen = true, chil
     <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-[0_0_0_1px_rgba(30,41,59,0.25)]">
       <button
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left active:scale-[0.99] transition-transform"
+        className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-transform active:scale-[0.99]"
       >
         <div className="flex min-w-0 items-center gap-3">
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950 ${accent}`}>
@@ -53,11 +53,11 @@ function MobileSection({ title, subtitle, icon, accent, defaultOpen = true, chil
         </div>
       </button>
 
-      {open && (
+      {open ? (
         <div className="border-t border-slate-800 px-3 pb-3 pt-3 [&>div]:rounded-xl [&>div]:border-slate-800 [&>div]:bg-slate-950/80">
           {children}
         </div>
-      )}
+      ) : null}
     </section>
   )
 }
@@ -95,38 +95,47 @@ export function ModernMobileDashboard() {
     () => [
       {
         id: 'overview',
-        label: 'Mission Overview',
+        label: 'System Overview',
         shortLabel: 'Overview',
         icon: <LayoutGrid className="h-4 w-4" />,
-        eyebrow: 'Campaign status',
-        description: 'Goals, pace, and strategic health',
+        eyebrow: 'Command summary',
+        description: 'Mission Control as RJ’s operating console',
         accent: 'text-blue-400',
         component: (
           <div className="space-y-4">
             <MobileSection
-              title="2026 Goals Status"
-              subtitle="Compressed desktop campaign tracker"
-              icon={<LayoutGrid className="h-5 w-5" />}
-              accent="text-blue-400"
+              title="Operations Status"
+              subtitle="System health, automation posture, and module confidence"
+              icon={<Cpu className="h-5 w-5" />}
+              accent="text-emerald-400"
             >
-              <GoalProgressDashboard />
+              <OperationsStatus />
+            </MobileSection>
+            <MobileSection
+              title="System Office"
+              subtitle="What the machine room is doing right now"
+              icon={<LayoutGrid className="h-5 w-5" />}
+              accent="text-cyan-400"
+              defaultOpen={false}
+            >
+              <AgentOfficeView />
             </MobileSection>
           </div>
         ),
       },
       {
         id: 'intel',
-        label: 'Daily Intel Brief',
+        label: 'Intel Brief',
         shortLabel: 'Intel',
         icon: <Radar className="h-4 w-4" />,
-        eyebrow: 'Signals and priorities',
-        description: 'Briefing layer for the day’s moves',
+        eyebrow: 'External signal layer',
+        description: 'AI, technology, science, business, and security context',
         accent: 'text-cyan-400',
         component: (
           <div className="space-y-4">
             <MobileSection
-              title="Daily Intel Brief"
-              subtitle="Same brief, mobile command framing"
+              title="Intel Brief"
+              subtitle="Curated signal feed for Ryan"
               icon={<Radar className="h-5 w-5" />}
               accent="text-cyan-400"
             >
@@ -136,43 +145,43 @@ export function ModernMobileDashboard() {
         ),
       },
       {
-        id: 'alerts',
-        label: 'Accountability Alerts',
-        shortLabel: 'Alerts',
-        icon: <ShieldAlert className="h-4 w-4" />,
-        eyebrow: 'Critical attention',
-        description: 'Deficits, recovery paths, and pressure',
-        accent: 'text-red-400',
+        id: 'ops',
+        label: 'System Office',
+        shortLabel: 'Office',
+        icon: <Cpu className="h-4 w-4" />,
+        eyebrow: 'Operator internals',
+        description: 'Core nodes, reliability, and recent activity',
+        accent: 'text-emerald-400',
         component: (
           <div className="space-y-4">
             <MobileSection
-              title="Accountability Layer"
-              subtitle="Critical issues and recovery actions"
-              icon={<ShieldAlert className="h-5 w-5" />}
-              accent="text-red-400"
+              title="RJ System Office"
+              subtitle="Core operating nodes and activity feed"
+              icon={<Cpu className="h-5 w-5" />}
+              accent="text-emerald-400"
             >
-              <AccountabilityAlerts />
+              <AgentOfficeView />
             </MobileSection>
           </div>
         ),
       },
       {
-        id: 'ops',
-        label: 'Operations Status',
-        shortLabel: 'Ops',
-        icon: <Cpu className="h-4 w-4" />,
-        eyebrow: 'Systems and agents',
-        description: 'Operator view of the machine room',
-        accent: 'text-emerald-400',
+        id: 'night-watch',
+        label: 'Night Watch',
+        shortLabel: 'Watch',
+        icon: <Moon className="h-4 w-4" />,
+        eyebrow: 'Monitoring + trust',
+        description: 'Live overnight status, swarm signals, and builder trust layer',
+        accent: 'text-indigo-400',
         component: (
           <div className="space-y-4">
             <MobileSection
-              title="Operations Status"
-              subtitle="Agents, health, and quick actions"
-              icon={<Cpu className="h-5 w-5" />}
-              accent="text-emerald-400"
+              title="Night Watch"
+              subtitle="Live monitoring and Mission Swarm trust surface"
+              icon={<Moon className="h-5 w-5" />}
+              accent="text-indigo-400"
             >
-              <OperationsStatus />
+              <NightWatchDashboard />
             </MobileSection>
           </div>
         ),
@@ -184,14 +193,14 @@ export function ModernMobileDashboard() {
   const activeTab = tabs.find((tab) => tab.id === activeView) ?? tabs[0]
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-24">
+    <div className="min-h-screen bg-slate-950 pb-24 text-white">
       <div className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-slate-950/80">
         <div className="px-4 pt-4 pb-3">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Mission Control</div>
-              <h1 className="mt-1 text-xl font-bold text-blue-400">Strategic Command</h1>
-              <p className="mt-1 text-xs text-slate-400">Desktop-aligned mobile ops view</p>
+              <h1 className="mt-1 text-xl font-bold text-blue-400">RJ Operator Console</h1>
+              <p className="mt-1 text-xs text-slate-400">System optimization, trust, and intelligence — no self-help dashboard cosplay.</p>
             </div>
             <div className="rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2 text-right shadow-lg shadow-slate-950/40">
               <div className="text-sm font-mono font-semibold text-green-400">{time}</div>
@@ -201,7 +210,7 @@ export function ModernMobileDashboard() {
 
           <div className="mt-3 grid grid-cols-3 gap-2">
             <CommandChip label="Status" value="Operational" tone="green" />
-            <CommandChip label="Agents" value="5 Active" tone="blue" />
+            <CommandChip label="Mode" value="Optimization" tone="blue" />
             <CommandChip label="Night Watch" value="Live" tone="indigo" />
           </div>
 
@@ -247,20 +256,6 @@ export function ModernMobileDashboard() {
         </div>
 
         {activeTab.component}
-      </div>
-
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-slate-950/80">
-        <div className="grid grid-cols-3 gap-2">
-          <button className="rounded-xl bg-green-500 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-green-500/20 active:scale-[0.98]">
-            Sync
-          </button>
-          <button className="rounded-xl bg-blue-500 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 active:scale-[0.98]">
-            Brief
-          </button>
-          <button className="rounded-xl bg-purple-500 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 active:scale-[0.98]">
-            Export
-          </button>
-        </div>
       </div>
     </div>
   )

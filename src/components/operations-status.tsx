@@ -1,70 +1,70 @@
 'use client'
 
-import { Bot, Activity, Zap, Database, Globe, Shield } from 'lucide-react'
+import { Activity, Bot, Database, Globe, Shield, Cpu, RadioTower, Workflow } from 'lucide-react'
 import { CronOpsCard } from './cron-ops-card'
 
-interface Agent {
+interface OperatorModule {
   id: string
   name: string
   role: string
-  status: 'active' | 'idle' | 'offline' | 'error'
+  status: 'active' | 'watching' | 'degraded' | 'idle'
   currentTask: string
   lastUpdate: string
-  performance: number
+  confidence: number
   priority: 'high' | 'medium' | 'low'
 }
 
-const agents: Agent[] = [
+const modules: OperatorModule[] = [
   {
-    id: 'research-agent',
-    name: 'Intel Officer',
-    role: 'Research & Analysis',
+    id: 'night-watch',
+    name: 'Night Watch',
+    role: 'Overnight monitoring + report generation',
     status: 'active',
-    currentTask: 'Scanning CISSP forums for Domain 6 updates',
-    lastUpdate: '2 minutes ago',
-    performance: 94,
-    priority: 'high'
+    currentTask: 'Publishing live state and maintaining durable swarm event history',
+    lastUpdate: 'live',
+    confidence: 96,
+    priority: 'high',
   },
   {
-    id: 'fitness-agent', 
-    name: 'Performance Tracker',
-    role: 'Health & Fitness',
+    id: 'mission-swarm',
+    name: 'Mission Swarm',
+    role: 'Recommendation engine + trust scoring',
     status: 'active',
-    currentTask: 'Processing Apple Watch running data',
-    lastUpdate: '5 minutes ago',
-    performance: 87,
-    priority: 'high'
+    currentTask: 'Ranking next operator improvements and measuring consensus',
+    lastUpdate: 'recent',
+    confidence: 93,
+    priority: 'high',
   },
   {
-    id: 'finance-agent',
-    name: 'Finance Controller',
-    role: 'Financial Monitoring',
-    status: 'idle',
-    currentTask: 'Awaiting banking API updates',
-    lastUpdate: '15 minutes ago',
-    performance: 91,
-    priority: 'medium'
+    id: 'model-failsafe',
+    name: 'Model Failsafe',
+    role: 'Routing, fallback, and degradation control',
+    status: 'watching',
+    currentTask: 'Checking primary/backup model posture and remaining runway',
+    lastUpdate: 'heartbeat',
+    confidence: 91,
+    priority: 'high',
   },
   {
-    id: 'study-agent',
-    name: 'Study Coordinator',
-    role: 'Learning Management',
+    id: 'memory-system',
+    name: 'Memory System',
+    role: 'Daily logs + long-term continuity',
     status: 'active',
-    currentTask: 'Generating Domain 6 practice questions',
-    lastUpdate: '1 minute ago',
-    performance: 89,
-    priority: 'high'
+    currentTask: 'Recording durable project context and preserving open loops',
+    lastUpdate: 'today',
+    confidence: 94,
+    priority: 'medium',
   },
   {
-    id: 'scheduler-agent',
-    name: 'Mission Planner',
-    role: 'Task Scheduling',
-    status: 'active',
-    currentTask: 'Optimizing weekly running schedule',
-    lastUpdate: '3 minutes ago',
-    performance: 92,
-    priority: 'medium'
-  }
+    id: 'intel-pipeline',
+    name: 'Intel Pipeline',
+    role: 'AI / technology / science / business signal layer',
+    status: 'watching',
+    currentTask: 'Condensing external signals into operator-useful briefings',
+    lastUpdate: 'today',
+    confidence: 88,
+    priority: 'medium',
+  },
 ]
 
 interface SystemMetric {
@@ -77,73 +77,62 @@ interface SystemMetric {
 
 const systemMetrics: SystemMetric[] = [
   {
-    name: 'Local AI Model',
-    value: 'Qwen 2.5 7B',
+    name: 'Gateway + Runtime',
+    value: 'Operational',
     status: 'good',
-    icon: <Bot className="w-4 h-4" />,
-    description: 'Running optimally'
+    icon: <RadioTower className="h-4 w-4" />,
+    description: 'Primary control plane reachable and responding',
   },
   {
-    name: 'Memory System',
-    value: '5-Layer Active',
-    status: 'good', 
-    icon: <Database className="w-4 h-4" />,
-    description: 'All layers operational'
+    name: 'Automation Layer',
+    value: 'Cron + launchd live',
+    status: 'good',
+    icon: <Workflow className="h-4 w-4" />,
+    description: 'Scheduled checks and summaries are wired into ops flow',
   },
   {
-    name: 'Security Status',
-    value: 'LOW Risk',
+    name: 'Memory Continuity',
+    value: 'Daily capture active',
     status: 'good',
-    icon: <Shield className="w-4 h-4" />,
-    description: '4 acceptable warnings'
+    icon: <Database className="h-4 w-4" />,
+    description: 'Operational state preserved across compaction and wake cycles',
   },
   {
-    name: 'API Connectivity',
-    value: '98.7% Uptime',
+    name: 'Exposure Posture',
+    value: 'Bounded',
     status: 'good',
-    icon: <Globe className="w-4 h-4" />,
-    description: 'All services online'
-  }
+    icon: <Shield className="h-4 w-4" />,
+    description: 'Safe Builder and system changes remain intentionally constrained',
+  },
 ]
 
-function StatusIndicator({ status }: { status: Agent['status'] }) {
+function StatusIndicator({ status }: { status: OperatorModule['status'] }) {
   const styles = {
-    active: 'bg-green-500 animate-pulse',
-    idle: 'bg-yellow-500',
-    offline: 'bg-gray-500',
-    error: 'bg-red-500 animate-pulse'
+    active: 'bg-green-500 shadow-green-500/30',
+    watching: 'bg-blue-500 shadow-blue-500/30',
+    degraded: 'bg-red-500 shadow-red-500/30 animate-pulse',
+    idle: 'bg-slate-500 shadow-slate-500/30',
   }
-  
-  return <div className={`w-3 h-3 rounded-full ${styles[status]}`} />
+
+  return <div className={`h-3 w-3 rounded-full shadow ${styles[status]}`} />
 }
 
-function PriorityBadge({ priority }: { priority: Agent['priority'] }) {
+function PriorityBadge({ priority }: { priority: OperatorModule['priority'] }) {
   const styles = {
-    high: 'bg-red-500/10 text-red-400 border-red-500/20',
-    medium: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-    low: 'bg-green-500/10 text-green-400 border-green-500/20'
+    high: 'border-red-500/20 bg-red-500/10 text-red-300',
+    medium: 'border-yellow-500/20 bg-yellow-500/10 text-yellow-300',
+    low: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
   }
-  
-  return (
-    <span className={`px-2 py-1 text-xs font-mono rounded border ${styles[priority]}`}>
-      {priority.toUpperCase()}
-    </span>
-  )
+
+  return <span className={`rounded border px-2 py-1 text-[11px] font-mono uppercase tracking-[0.14em] ${styles[priority]}`}>{priority}</span>
 }
 
-function PerformanceBar({ performance }: { performance: number }) {
-  const getColor = () => {
-    if (performance >= 90) return 'bg-green-500'
-    if (performance >= 75) return 'bg-yellow-500'
-    return 'bg-red-500'
-  }
-  
+function ConfidenceBar({ confidence }: { confidence: number }) {
+  const tone = confidence >= 92 ? 'bg-emerald-500' : confidence >= 85 ? 'bg-cyan-500' : 'bg-yellow-500'
+
   return (
-    <div className="w-full bg-slate-700 rounded-full h-2">
-      <div 
-        className={`h-2 rounded-full transition-all duration-300 ${getColor()}`}
-        style={{ width: `${performance}%` }}
-      />
+    <div className="h-2 w-full rounded-full bg-slate-800">
+      <div className={`h-2 rounded-full ${tone}`} style={{ width: `${confidence}%` }} />
     </div>
   )
 }
@@ -151,119 +140,115 @@ function PerformanceBar({ performance }: { performance: number }) {
 function MetricStatus({ status }: { status: SystemMetric['status'] }) {
   const styles = {
     good: 'text-green-400',
-    warning: 'text-yellow-400', 
-    critical: 'text-red-400'
+    warning: 'text-yellow-400',
+    critical: 'text-red-400',
   }
-  
+
   const icons = {
     good: '✓',
     warning: '⚠',
-    critical: '✗'
+    critical: '✗',
   }
-  
+
   return <span className={`font-mono ${styles[status]}`}>{icons[status]}</span>
 }
 
 export function OperationsStatus() {
-  const activeAgents = agents.filter(a => a.status === 'active').length
-  const avgPerformance = Math.round(agents.reduce((acc, a) => acc + a.performance, 0) / agents.length)
-  
+  const activeModules = modules.filter((module) => module.status === 'active' || module.status === 'watching').length
+  const avgConfidence = Math.round(modules.reduce((acc, module) => acc + module.confidence, 0) / modules.length)
+
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-green-400">🤖 OPERATIONS STATUS</h2>
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-green-400" />
-          <span className="text-sm text-green-400 font-mono">
-            {activeAgents}/{agents.length} ACTIVE
-          </span>
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-[0_20px_50px_-30px_rgba(34,197,94,0.25)]">
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">System command</div>
+          <h2 className="mt-2 text-xl font-bold text-emerald-300">RJ Operations Status</h2>
+          <p className="mt-1 text-sm text-slate-400">Mission Control is now centered on the machine room, not Ryan’s habit tracker.</p>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-emerald-300">
+          <Activity className="h-4 w-4" />
+          <span className="font-mono">{activeModules}/{modules.length} online</span>
         </div>
       </div>
 
-      {/* Agent Status */}
+      <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Operator stance</div>
+          <div className="mt-2 text-lg font-semibold text-white">Control plane first</div>
+          <div className="mt-1 text-sm text-slate-400">Observe, explain, and optimize the system before adding more widgets.</div>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Average confidence</div>
+          <div className="mt-2 text-lg font-semibold text-cyan-300">{avgConfidence}%</div>
+          <div className="mt-1 text-sm text-slate-400">Confidence is about legibility and boundedness, not vibes.</div>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Optimization mode</div>
+          <div className="mt-2 text-lg font-semibold text-amber-300">Active</div>
+          <div className="mt-1 text-sm text-slate-400">The system is now framed around what RJ should improve next.</div>
+        </div>
+      </div>
+
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-white mb-4">🎯 Agent Operations</h3>
+        <h3 className="mb-4 text-lg font-semibold text-white">Core modules</h3>
         <div className="space-y-3">
-          {agents.map((agent) => (
-            <div key={agent.id} className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/30">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <StatusIndicator status={agent.status} />
-                  <div>
-                    <h4 className="font-semibold text-white text-sm">{agent.name}</h4>
-                    <p className="text-xs text-slate-400">{agent.role}</p>
+          {modules.map((module) => (
+            <div key={module.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <StatusIndicator status={module.status} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white">{module.name}</div>
+                    <div className="text-xs text-slate-400">{module.role}</div>
+                    <div className="mt-2 text-sm text-slate-300">{module.currentTask}</div>
+                    <div className="mt-1 text-xs text-slate-500">Last update: {module.lastUpdate}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono text-white">{agent.performance}%</span>
-                  <PriorityBadge priority={agent.priority} />
+                  <div className="text-sm font-mono text-white">{module.confidence}%</div>
+                  <PriorityBadge priority={module.priority} />
                 </div>
               </div>
-              
-              <div className="mb-2">
-                <p className="text-sm text-slate-300">{agent.currentTask}</p>
-                <p className="text-xs text-slate-500">Last update: {agent.lastUpdate}</p>
+              <div className="mt-3">
+                <ConfidenceBar confidence={module.confidence} />
               </div>
-              
-              <PerformanceBar performance={agent.performance} />
             </div>
           ))}
         </div>
       </div>
 
-      {/* System Metrics */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-white mb-4">⚙️ System Health</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <h3 className="mb-4 text-lg font-semibold text-white">System health</h3>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {systemMetrics.map((metric) => (
-            <div key={metric.name} className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/30">
-              <div className="flex items-center justify-between mb-1">
+            <div key={metric.name} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+              <div className="mb-1 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="text-blue-400">{metric.icon}</div>
+                  <div className="text-cyan-300">{metric.icon}</div>
                   <span className="text-sm font-semibold text-white">{metric.name}</span>
                 </div>
                 <MetricStatus status={metric.status} />
               </div>
-              <div className="text-sm text-slate-300 mb-1">{metric.value}</div>
-              <div className="text-xs text-slate-500">{metric.description}</div>
+              <div className="text-sm text-slate-300">{metric.value}</div>
+              <div className="mt-1 text-xs text-slate-500">{metric.description}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-white mb-4">⚡ Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <button className="px-3 py-2 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
-            Restart All
-          </button>
-          <button className="px-3 py-2 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-            Sync Data
-          </button>
-          <button className="px-3 py-2 text-xs bg-yellow-500 text-black rounded hover:bg-yellow-600 transition-colors">
-            Health Check
-          </button>
-          <button className="px-3 py-2 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
-            Emergency Stop
-          </button>
-        </div>
-      </div>
-
-      {/* Performance Summary */}
-      <div className="pt-4 border-t border-slate-700">
+      <div className="border-t border-slate-800 pt-4">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-lg font-bold text-green-400">{activeAgents}</div>
-            <div className="text-xs text-slate-400">Active Agents</div>
+            <div className="text-lg font-bold text-emerald-300">{activeModules}</div>
+            <div className="text-xs text-slate-400">Watching / active</div>
           </div>
           <div>
-            <div className="text-lg font-bold text-blue-400">{avgPerformance}%</div>
-            <div className="text-xs text-slate-400">Avg Performance</div>
+            <div className="text-lg font-bold text-cyan-300">{avgConfidence}%</div>
+            <div className="text-xs text-slate-400">Avg confidence</div>
           </div>
           <div>
-            <div className="text-lg font-bold text-green-400">98.7%</div>
-            <div className="text-xs text-slate-400">System Uptime</div>
+            <div className="text-lg font-bold text-violet-300">Bounded</div>
+            <div className="text-xs text-slate-400">Automation posture</div>
           </div>
         </div>
       </div>
