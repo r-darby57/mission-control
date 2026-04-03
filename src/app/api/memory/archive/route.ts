@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 
 const workspaceRoot = path.resolve(process.cwd(), '..')
 const memoryDir = path.join(workspaceRoot, 'memory')
+const projectsDir = path.join(memoryDir, 'projects')
 
 type MemoryEntryType = 'conversation' | 'decision' | 'insight' | 'task' | 'briefing'
 type MemoryEntryImportance = 'low' | 'medium' | 'high' | 'critical'
@@ -26,21 +27,12 @@ function inferImportance(title: string, content: string): MemoryEntryImportance 
   return 'low'
 }
 
-function inferScope(title: string, content: string, sourceFile: string): MemoryScope {
-  const text = `${title} ${content} ${sourceFile}`.toLowerCase()
-  if (sourceFile === 'MEMORY.md') return 'long-term'
-  if (sourceFile.includes('open-loops')) return 'open-loops'
-  if (text.includes('decision')) return 'decisions'
-  if (text.includes('mission-control') || text.includes('night watch') || text.includes('mission swarm') || text.includes('intel')) return 'projects'
-  return 'daily'
-}
-
 function buildTags(title: string, content: string, fileName: string) {
   const raw = `${title} ${content} ${fileName}`
     .toLowerCase()
     .match(/[a-z0-9-]{4,}/g) || []
 
-  return Array.from(new Set(raw.filter((word) => !['daily', 'log', 'system', 'events', 'notes', 'actions', 'taken', 'open', 'loops', 'update'].includes(word)))).slice(0, 6)
+  return Array.from(new Set(raw.filter((word) => !['daily', 'log', 'system', 'events', 'notes', 'actions', 'taken', 'open', 'loops', 'update'].includes(word)))).slice(0, 8)
 }
 
 function splitSections(fileContent: string) {
@@ -51,6 +43,15 @@ function splitSections(fileContent: string) {
     const content = (index === 0 && !section.startsWith('#') ? lines.join('\n') : lines.slice(1).join('\n')).trim()
     return { title, content }
   }).filter((section) => section.content)
+}
+
+async function readJson(relativePath: string) {
+  try {
+    const fullPath = path.join(workspaceRoot, relativePath)
+    return JSON.parse(await readFile(fullPath, 'utf8'))
+  } catch {
+    return null
+  }
 }
 
 async function readMarkdownMemoryEntries() {
@@ -69,9 +70,12 @@ async function readMarkdownMemoryEntries() {
       sections.forEach((section, idx) => {
         const sourceFile = `memory/${fileName}`
         const timestamp = `${fileDate}T12:${String(idx).padStart(2, '0')}:00Z`
+        const inferredType = inferType(section.title, section.content)
+        const scope: MemoryScope = inferredType === 'decision' ? 'decisions' : 'daily'
+
         entries.push({
           id: `${fileName}-${idx}`,
-          type: inferType(section.title, section.content),
+          type: inferredType,
           title: section.title,
           content: section.content,
           timestamp,
@@ -80,7 +84,7 @@ async function readMarkdownMemoryEntries() {
           importance: inferImportance(section.title, section.content),
           searchable: `${section.title} ${section.content} ${fileName}`.toLowerCase(),
           sourceFile,
-          scope: inferScope(section.title, section.content, sourceFile),
+          scope,
         })
       })
     }
@@ -114,10 +118,9 @@ async function readLongTermMemoryEntry() {
 }
 
 async function readOpenLoopEntries() {
-  const openLoopsPath = path.join(memoryDir, 'open-loops.json')
+  const raw = await readJson(path.join('memory', 'open-loops.json'))
   try {
-    const raw = JSON.parse(await readFile(openLoopsPath, 'utf8'))
-    const items = Array.isArray(raw.items) ? raw.items : []
+    const items = Array.isArray(raw?.items) ? raw.items : []
     return items.map((item: any, idx: number) => ({
       id: item.id || `open-loop-${idx}`,
       type: 'task' as MemoryEntryType,
@@ -138,38 +141,87 @@ async function readOpenLoopEntries() {
   }
 }
 
+async function readDecisionEntries() {
+  const raw = await readJson(path.join('memory', 'decisions.json'))
+  const items = Array.isArray(raw?.items) ? raw.items : []
+
+  return items.map((item: any) => ({
+    id: item.id,
+    type: 'decision' as MemoryEntryType,
+    title: item.decision,
+    content: `Reasoning: ${item.reasoning || 'No reasoning recorded.'}`,
+    timestamp: item.date ? `${item.date}T12:00:00Z` : raw?.updatedAt || new Date().toISOString(),
+    tags: ['decision', item.status].filter(Boolean),
+    agent: 'RJ',
+    importance: 'high' as MemoryEntryImportance,
+    searchable: `${item.decision || ''} ${item.reasoning || ''}`.toLowerCase(),
+    sourceFile: 'memory/decisions.json',
+    scope: 'decisions' as MemoryScope,
+  }))
+}
+
+async function readProjectEntries() {
+  try {
+    const files = (await readdir(projectsDir)).filter((file) => file.endsWith('.md')).sort()
+    const entries: any[] = []
+
+    for (const fileName of files) {
+      const raw = await readFile(path.join(projectsDir, fileName), 'utf8')
+      entries.push({
+        id: `project-${fileName}`,
+        type: 'briefing' as MemoryEntryType,
+        title: raw.split('\n')[0]?.replace(/^#\s*/, '').trim() || fileName.replace('.md', ''),
+        content: raw,
+        timestamp: new Date().toISOString(),
+        tags: buildTags(fileName, raw, fileName),
+        agent: 'RJ',
+        importance: 'high' as MemoryEntryImportance,
+        searchable: `${fileName} ${raw}`.toLowerCase(),
+        sourceFile: `memory/projects/${fileName}`,
+        scope: 'projects' as MemoryScope,
+      })
+    }
+
+    return entries
+  } catch {
+    return []
+  }
+}
+
 async function readMemoryEntries() {
-  const [markdownEntries, longTermEntries, openLoopEntries] = await Promise.all([
+  const [markdownEntries, longTermEntries, openLoopEntries, decisionEntries, projectEntries] = await Promise.all([
     readMarkdownMemoryEntries(),
     readLongTermMemoryEntry(),
     readOpenLoopEntries(),
+    readDecisionEntries(),
+    readProjectEntries(),
   ])
 
-  return [...openLoopEntries, ...longTermEntries, ...markdownEntries]
+  return [...openLoopEntries, ...decisionEntries, ...projectEntries, ...longTermEntries, ...markdownEntries]
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 }
 
 async function buildProfile(entries: any[]) {
-  const memoryMdPath = path.join(workspaceRoot, 'MEMORY.md')
-  let longTerm = ''
-  try {
-    longTerm = await readFile(memoryMdPath, 'utf8')
-  } catch {}
+  const profile = await readJson(path.join('memory', 'profile.json'))
 
-  const staticProfile = [
-    ...Array.from(longTerm.matchAll(/- \*\*(.+?)\*\*: (.+)/g)).slice(0, 8).map((match) => `${match[1]}: ${match[2]}`),
-  ]
+  const staticProfile = profile ? [
+    `Assistant: ${profile.identity?.assistantName || 'RJ'} — ${profile.identity?.role || 'operator'}`,
+    `User: ${profile.user?.name || 'Ryan Darby'} — ${profile.user?.career || 'unknown'}`,
+    `Operating model: ${profile.user?.preferences?.operatingModel || 'unknown'}`,
+    `Primary model: ${profile.system?.primaryModel || 'unknown'}`,
+    ...(profile.user?.focus || []).slice(0, 4).map((item: string) => `Focus: ${item}`),
+  ] : []
 
   const recent = entries.filter((entry) => entry.scope !== 'long-term').slice(0, 6).map((entry) => `${entry.title}: ${entry.content.split('\n')[0]?.slice(0, 140) || ''}`)
-  const openLoops = entries.filter((entry) => entry.scope === 'open-loops').slice(0, 3).map((entry) => entry.title)
-  const projectThreads = Array.from(new Set(entries.filter((entry) => entry.scope === 'projects').flatMap((entry) => entry.tags || []))).slice(0, 6)
+  const openLoops = entries.filter((entry) => entry.scope === 'open-loops').slice(0, 4).map((entry) => entry.title)
+  const projectThreads = entries.filter((entry) => entry.scope === 'projects').slice(0, 6).map((entry) => entry.title)
 
   return {
     static: staticProfile,
     dynamic: recent,
     openLoops,
     projects: projectThreads,
-    summary: 'Scoped local memory profile synthesized from long-term memory, daily logs, and open loops.',
+    summary: 'Canonical-first local memory profile synthesized from profile.json, decisions.json, project files, and recent logs.',
   }
 }
 
@@ -188,14 +240,14 @@ function buildIndex(entries: any[]) {
 
   return {
     scopes,
-    recentTitles: entries.slice(0, 8).map((entry) => ({
+    recentTitles: entries.slice(0, 10).map((entry) => ({
       title: entry.title,
       scope: entry.scope,
       timestamp: entry.timestamp,
     })),
     topTags: Array.from(tagCounts.entries())
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
+      .slice(0, 12)
       .map(([tag, count]) => ({ tag, count })),
   }
 }
@@ -210,7 +262,7 @@ export async function GET() {
     profile,
     index,
     meta: {
-      source: 'workspace-memory-files',
+      source: 'canonical-memory-first',
       total: entries.length,
       generatedAt: new Date().toISOString(),
     },
