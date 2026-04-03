@@ -1,6 +1,7 @@
 'use client'
 
-import { BrainCircuit, Cpu, FlaskConical, Briefcase, Shield, Clock, ArrowRight } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { BrainCircuit, Cpu, FlaskConical, Briefcase, Shield, Clock, ArrowRight, Radar } from 'lucide-react'
 
 interface IntelItem {
   category: 'ai' | 'technology' | 'science' | 'business' | 'cybersecurity'
@@ -12,53 +13,10 @@ interface IntelItem {
   timestamp: string
 }
 
-const mockIntel: IntelItem[] = [
-  {
-    category: 'ai',
-    priority: 'high',
-    title: 'Frontier labs keep compressing the gap between assistant and operator tooling',
-    summary: 'Agent products are shifting from chat wrappers into system-control surfaces with memory, automation, and trust telemetry as differentiators.',
-    operatorValue: 'Push Mission Control toward observable automations, receipts, and bounded execution instead of generic chat UX.',
-    source: 'Operator synthesis',
-    timestamp: 'fresh',
-  },
-  {
-    category: 'technology',
-    priority: 'medium',
-    title: 'Operational dashboards are winning when they show fewer, sharper signals',
-    summary: 'Dense monitoring walls are useful only if the top layer compresses what matters right now into immediate operator decisions.',
-    operatorValue: 'Keep summary cards, status indicators, and ranked next actions above deep detail panes.',
-    source: 'Product/infra trend scan',
-    timestamp: 'today',
-  },
-  {
-    category: 'science',
-    priority: 'medium',
-    title: 'Scientific workflows are increasingly agent-assisted, but trust remains the bottleneck',
-    summary: 'Teams are adopting AI help for synthesis and exploration, but validation chains still decide whether outputs are actually usable.',
-    operatorValue: 'Show proof of work, not just conclusions. Receipts matter more than swagger.',
-    source: 'Research tooling landscape',
-    timestamp: 'today',
-  },
-  {
-    category: 'business',
-    priority: 'high',
-    title: 'The real moat is reliability plus decision velocity',
-    summary: 'Businesses are rewarding systems that reduce coordination drag and make action legible under uncertainty.',
-    operatorValue: 'Make Mission Control a control plane that helps Ryan understand the machine in seconds.',
-    source: 'Business model synthesis',
-    timestamp: 'today',
-  },
-  {
-    category: 'cybersecurity',
-    priority: 'high',
-    title: 'Security posture for agent systems is drifting toward scope control and auditability',
-    summary: 'The strongest pattern is not “maximum autonomy,” it is tightly scoped automation with visible boundaries and logs.',
-    operatorValue: 'Keep Safe Builder constrained and make every meaningful action explainable.',
-    source: 'Security architecture scan',
-    timestamp: 'today',
-  },
-]
+interface IntelPayload {
+  updatedAt?: string | null
+  items: IntelItem[]
+}
 
 function PriorityIndicator({ priority }: { priority: IntelItem['priority'] }) {
   const styles = {
@@ -83,12 +41,29 @@ function CategoryIcon({ category }: { category: IntelItem['category'] }) {
 }
 
 export function DailyIntelBrief() {
+  const [data, setData] = useState<IntelPayload>({ items: [] })
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch('/api/intel/brief')
+        if (!res.ok) throw new Error('Failed to load intel brief')
+        const json = await res.json()
+        setData(json)
+      } catch {
+        setData({ items: [] })
+      }
+    }
+
+    load()
+  }, [])
+
   const currentTime = new Date().toLocaleTimeString('en-US', {
     hour12: false,
     timeZone: 'America/Los_Angeles',
   })
 
-  const highPriorityCount = mockIntel.filter((item) => item.priority === 'high').length
+  const highPriorityCount = useMemo(() => data.items.filter((item) => item.priority === 'high').length, [data.items])
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-[0_20px_50px_-30px_rgba(8,145,178,0.4)]">
@@ -96,7 +71,7 @@ export function DailyIntelBrief() {
         <div>
           <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Intelligence briefing</div>
           <h2 className="mt-2 text-xl font-bold text-cyan-300">AI · Tech · Science · Business</h2>
-          <p className="mt-1 text-sm text-slate-400">Curated signal layer for Ryan, filtered through what actually helps the system.</p>
+          <p className="mt-1 text-sm text-slate-400">File-backed signal layer for Ryan, filtered through what actually helps the system.</p>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Clock className="h-4 w-4" />
@@ -116,14 +91,20 @@ export function DailyIntelBrief() {
           <div className="mt-1 text-sm text-slate-400">Worth attention now, not someday.</div>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Mission use</div>
-          <div className="mt-2 text-lg font-semibold text-emerald-300">Decision advantage</div>
-          <div className="mt-1 text-sm text-slate-400">Intel should make the machine smarter, not just more informed.</div>
+          <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Source mode</div>
+          <div className="mt-2 flex items-center gap-2 text-lg font-semibold text-emerald-300"><Radar className="h-4 w-4" />Local intel file</div>
+          <div className="mt-1 text-sm text-slate-400">Now backed by a real workspace source instead of hardcoded UI filler.</div>
         </div>
       </div>
 
+      <div className="mb-4 text-[11px] text-slate-500">
+        Updated: {data.updatedAt ? new Date(data.updatedAt).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }) : 'unknown'}
+      </div>
+
       <div className="space-y-4">
-        {mockIntel.map((item, index) => (
+        {data.items.length === 0 ? (
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">No intel items loaded yet.</div>
+        ) : data.items.map((item, index) => (
           <div key={index} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
             <div className="flex items-start gap-3">
               <PriorityIndicator priority={item.priority} />
