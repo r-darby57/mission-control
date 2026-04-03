@@ -2,6 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
+interface SafeBuilderReceipt {
+  summary?: string | null
+  command?: string | null
+  status?: string | null
+  result?: string | null
+  notes?: string | null
+  ts?: string | null
+}
+
 interface NightWatchState {
   lastRun: string | null
   lastTask: {
@@ -29,6 +38,7 @@ interface NightWatchState {
       summary?: string
       validation?: string
       scope?: string[]
+      receipts?: SafeBuilderReceipt[]
     } | null
     lastReport?: string | null
   }
@@ -59,6 +69,7 @@ interface SwarmPayload {
       summary?: string
       validation?: string
       scope?: string[]
+      receipts?: SafeBuilderReceipt[]
     } | null
     history?: Array<{
       ts?: string
@@ -88,6 +99,7 @@ interface SwarmEventItem {
   safeBuilderSummary?: string | null
   safeBuilderValidation?: string | null
   safeBuilderScope?: string[]
+  safeBuilderReceipts?: SafeBuilderReceipt[]
 }
 
 const fallbackState: NightWatchState = {
@@ -225,8 +237,13 @@ export function NightWatchDashboard() {
 
   const topRecommendationTitle = swarm.state?.lastRecommendation?.title || state.missionSwarm?.topRecommendation?.title || 'No recommendation yet.'
   const topRecommendationSummary = swarm.state?.lastRecommendation?.summary || state.missionSwarm?.topRecommendation?.summary || 'Waiting for first advisory cycle.'
-  const builderSummary = swarm.state?.lastSafeBuilderAction?.summary || state.missionSwarm?.lastSafeBuilderAction?.summary || 'Safe Builder not ready yet.'
-  const builderValidation = swarm.state?.lastSafeBuilderAction?.validation || state.missionSwarm?.lastSafeBuilderAction?.validation || 'Validation rules pending.'
+  const builderAction = swarm.state?.lastSafeBuilderAction || state.missionSwarm?.lastSafeBuilderAction
+  const builderSummary = builderAction?.summary || 'Safe Builder not ready yet.'
+  const builderValidation = builderAction?.validation || 'Validation rules pending.'
+  const builderReceipts = (builderAction?.receipts && builderAction.receipts.length > 0
+    ? builderAction.receipts
+    : swarmEvents.find((item) => item.safeBuilderReceipts?.length)?.safeBuilderReceipts) || []
+  const primaryReceipt = builderReceipts[0]
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -238,9 +255,10 @@ export function NightWatchDashboard() {
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 shadow-[0_10px_30px_-20px_rgba(16,185,129,0.45)]">
           <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-300/80">Safe Builder</div>
-          <div className="mt-2 text-base font-semibold text-white leading-snug">{swarm.state?.lastSafeBuilderAction?.status || state.missionSwarm?.lastSafeBuilderAction?.status || 'unknown'}</div>
+          <div className="mt-2 text-base font-semibold text-white leading-snug">{builderAction?.status || 'unknown'}</div>
           <div className="mt-2 text-sm text-slate-300 leading-relaxed">{builderSummary}</div>
-          <div className="mt-2 text-[11px] text-slate-400">{builderValidation}</div>
+          <div className="mt-2 text-[11px] text-slate-400">{primaryReceipt?.command || builderValidation}</div>
+          <div className="mt-1 text-[11px] text-emerald-200/80">{primaryReceipt?.result || primaryReceipt?.notes || 'Receipt chain ready.'}</div>
         </div>
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-[0_10px_30px_-20px_rgba(245,158,11,0.45)]">
           <div className="text-[11px] uppercase tracking-[0.2em] text-amber-300/80">Consensus</div>
@@ -298,9 +316,10 @@ export function NightWatchDashboard() {
             </div>
             <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
               <div className="text-xs text-slate-400">safe builder</div>
-              <div className="text-sm text-white mt-1">{swarm.state?.lastSafeBuilderAction?.summary || state.missionSwarm?.lastSafeBuilderAction?.summary || 'Safe Builder not ready yet.'}</div>
-              <div className="text-xs text-slate-400 mt-2">validation: {swarm.state?.lastSafeBuilderAction?.validation || state.missionSwarm?.lastSafeBuilderAction?.validation || 'Validation rules pending.'}</div>
-              <div className="text-xs text-slate-500 mt-2">scope: {(swarm.state?.lastSafeBuilderAction?.scope || state.missionSwarm?.lastSafeBuilderAction?.scope || []).join(', ') || 'no scope declared'}</div>
+              <div className="text-sm text-white mt-1">{builderSummary}</div>
+              <div className="text-xs text-slate-400 mt-2">validation: {primaryReceipt?.command || builderValidation}</div>
+              <div className="text-xs text-slate-400 mt-2">result: {primaryReceipt?.result || primaryReceipt?.notes || 'No explicit result recorded yet.'}</div>
+              <div className="text-xs text-slate-500 mt-2">scope: {(builderAction?.scope || []).join(', ') || 'no scope declared'}</div>
             </div>
           </div>
         </NightWatchCard>
@@ -336,19 +355,39 @@ export function NightWatchDashboard() {
           <div className="space-y-3">
             <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
               <div className="text-xs text-slate-400">last action status</div>
-              <div className="text-sm text-white font-semibold mt-1">{swarm.state?.lastSafeBuilderAction?.status || state.missionSwarm?.lastSafeBuilderAction?.status || 'unknown'}</div>
+              <div className="text-sm text-white font-semibold mt-1">{builderAction?.status || 'unknown'}</div>
             </div>
             <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
               <div className="text-xs text-slate-400">validation receipt</div>
-              <div className="text-sm text-slate-200 mt-1">{swarm.state?.lastSafeBuilderAction?.validation || state.missionSwarm?.lastSafeBuilderAction?.validation || 'No validation receipt recorded.'}</div>
+              <div className="text-sm text-slate-200 mt-1">{primaryReceipt?.command || builderValidation || 'No validation receipt recorded.'}</div>
+              <div className="mt-2 text-[11px] text-slate-400">{primaryReceipt?.result || primaryReceipt?.notes || 'No explicit validation result recorded.'}</div>
             </div>
             <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
               <div className="text-xs text-slate-400">operator summary</div>
-              <div className="text-sm text-slate-200 mt-1">{swarm.state?.lastSafeBuilderAction?.summary || state.missionSwarm?.lastSafeBuilderAction?.summary || 'No operator summary recorded.'}</div>
+              <div className="text-sm text-slate-200 mt-1">{builderSummary || 'No operator summary recorded.'}</div>
             </div>
             <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
               <div className="text-xs text-slate-400">declared scope</div>
-              <div className="text-sm text-slate-200 mt-1">{(swarm.state?.lastSafeBuilderAction?.scope || state.missionSwarm?.lastSafeBuilderAction?.scope || []).join(', ') || 'No scope declared.'}</div>
+              <div className="text-sm text-slate-200 mt-1">{(builderAction?.scope || []).join(', ') || 'No scope declared.'}</div>
+            </div>
+            <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
+              <div className="text-xs text-slate-400">receipt chain</div>
+              <div className="mt-2 space-y-2">
+                {builderReceipts.length === 0 ? (
+                  <div className="text-sm text-slate-300">No receipt chain recorded yet.</div>
+                ) : (
+                  builderReceipts.slice(0, 3).map((receipt, idx) => (
+                    <div key={`${receipt.ts || 'receipt'}-${idx}`} className="rounded-lg border border-slate-700/40 bg-slate-950/60 p-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs font-semibold text-white">{receipt.summary || `Receipt ${idx + 1}`}</div>
+                        <div className="text-[11px] text-slate-500">{receipt.ts ? formatTs(receipt.ts) : 'no timestamp'}</div>
+                      </div>
+                      <div className="mt-1 text-[11px] text-cyan-300">{receipt.command || 'No command recorded.'}</div>
+                      <div className="mt-1 text-[11px] text-slate-300">{receipt.result || receipt.notes || 'No result recorded.'}</div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </NightWatchCard>
@@ -403,7 +442,8 @@ export function NightWatchDashboard() {
                   </div>
                   <div className="text-[11px] text-slate-500 mt-2">{formatTs(item.ts)}</div>
                   {'consensusAverage' in item ? <div className="text-xs text-cyan-300 mt-2">consensus {item.consensusAverage ?? 'n/a'} / spread {item.consensusSpread ?? 'n/a'}</div> : null}
-                  {'safeBuilderValidation' in item ? <div className="text-[11px] text-slate-400 mt-2">{item.safeBuilderValidation || 'No validation receipt recorded.'}</div> : null}
+                  {'safeBuilderValidation' in item ? <div className="text-[11px] text-slate-400 mt-2">{item.safeBuilderReceipts?.[0]?.command || item.safeBuilderValidation || 'No validation receipt recorded.'}</div> : null}
+                  {'safeBuilderReceipts' in item && item.safeBuilderReceipts?.[0]?.result ? <div className="text-[11px] text-emerald-200/80 mt-1">{item.safeBuilderReceipts[0].result}</div> : null}
                 </div>
               </div>
             ))}

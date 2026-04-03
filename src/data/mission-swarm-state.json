@@ -17,7 +17,17 @@
       "night-watch-reporting",
       "internal-readonly-analysis"
     ],
-    "validation": "Run project build before claiming success."
+    "validation": "Run project build before claiming success.",
+    "receipts": [
+      {
+        "summary": "Validation gate for bounded UI/reporting changes",
+        "command": "npm run build",
+        "status": "required",
+        "result": "Build must pass before success is claimed or published.",
+        "notes": "Legacy advisory converted into structured receipt format.",
+        "ts": "2026-03-31T07:44:53.074713"
+      }
+    ]
   },
   "lastReport": "reports/mission-swarm-2026-03-31-074453.md",
   "history": [

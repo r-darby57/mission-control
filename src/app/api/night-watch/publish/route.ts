@@ -10,6 +10,20 @@ function buildSwarmEvent(body: any, updatedAt: string) {
   const consensusAverage = scores.length ? Math.round(scores.reduce((acc, score) => acc + score, 0) / scores.length) : null
   const consensusSpread = scores.length ? Math.max(...scores) - Math.min(...scores) : null
 
+  const safeBuilderAction = body?.swarmState?.lastSafeBuilderAction ?? {}
+  const safeBuilderReceipts = Array.isArray(safeBuilderAction?.receipts)
+    ? safeBuilderAction.receipts.slice(0, 5)
+    : [
+        {
+          summary: safeBuilderAction?.summary ?? null,
+          command: safeBuilderAction?.validation ?? null,
+          status: safeBuilderAction?.status ?? null,
+          result: safeBuilderAction?.validation ?? null,
+          notes: 'Legacy validation string captured as fallback receipt.',
+          ts: updatedAt,
+        },
+      ].filter((receipt) => receipt.summary || receipt.command || receipt.result)
+
   return {
     ts: updatedAt,
     source: 'live-publish',
@@ -20,10 +34,11 @@ function buildSwarmEvent(body: any, updatedAt: string) {
     topRecommendationScore: body?.swarmState?.lastRecommendation?.score ?? body?.swarmRecommendations?.topRecommendation?.score ?? null,
     consensusAverage,
     consensusSpread,
-    safeBuilderStatus: body?.swarmState?.lastSafeBuilderAction?.status ?? null,
-    safeBuilderSummary: body?.swarmState?.lastSafeBuilderAction?.summary ?? null,
-    safeBuilderValidation: body?.swarmState?.lastSafeBuilderAction?.validation ?? null,
-    safeBuilderScope: body?.swarmState?.lastSafeBuilderAction?.scope ?? [],
+    safeBuilderStatus: safeBuilderAction?.status ?? null,
+    safeBuilderSummary: safeBuilderAction?.summary ?? null,
+    safeBuilderValidation: safeBuilderAction?.validation ?? null,
+    safeBuilderScope: safeBuilderAction?.scope ?? [],
+    safeBuilderReceipts,
     roleOutputs,
   }
 }

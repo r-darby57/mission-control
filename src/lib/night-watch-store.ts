@@ -15,6 +15,15 @@ type LiveStorePayload = {
   source: string
 }
 
+export type SafeBuilderReceipt = {
+  summary?: string | null
+  command?: string | null
+  status?: string | null
+  result?: string | null
+  notes?: string | null
+  ts?: string | null
+}
+
 export type SwarmEventRecord = {
   ts: string
   source: string
@@ -29,6 +38,7 @@ export type SwarmEventRecord = {
   safeBuilderSummary?: string | null
   safeBuilderValidation?: string | null
   safeBuilderScope?: string[]
+  safeBuilderReceipts?: SafeBuilderReceipt[]
   roleOutputs?: Record<string, unknown>
 }
 

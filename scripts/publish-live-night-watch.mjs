@@ -42,6 +42,19 @@ async function loadCronStatus() {
 const state = await loadJson(path.join('night-watch', 'state.json'))
 const swarmState = await loadJson(path.join('night-watch', 'mission-swarm', 'state.json'))
 
+if (swarmState?.lastSafeBuilderAction && !Array.isArray(swarmState.lastSafeBuilderAction.receipts)) {
+  swarmState.lastSafeBuilderAction.receipts = [
+    {
+      summary: swarmState.lastSafeBuilderAction.summary ?? null,
+      command: swarmState.lastSafeBuilderAction.validation ?? null,
+      status: swarmState.lastSafeBuilderAction.status ?? null,
+      result: swarmState.lastSafeBuilderAction.validation ?? null,
+      notes: 'Auto-generated fallback receipt during live publish.',
+      ts: swarmState.lastRun ?? state.lastRun ?? new Date().toISOString(),
+    },
+  ].filter((receipt) => receipt.summary || receipt.command || receipt.result)
+}
+
 const payload = {
   state,
   trends: await loadJson(path.join('night-watch', 'trends.json')),
