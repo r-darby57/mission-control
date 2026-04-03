@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Calendar, Tag, Clock, MessageSquare, Brain, FileText, Star, Database } from 'lucide-react'
+import { Search, Calendar, Tag, Clock, MessageSquare, Brain, FileText, Star, Database, Layers3 } from 'lucide-react'
 
 interface MemoryEntry {
   id: string
@@ -14,6 +14,7 @@ interface MemoryEntry {
   importance: 'low' | 'medium' | 'high' | 'critical'
   searchable: string
   sourceFile?: string
+  scope?: 'long-term' | 'daily' | 'open-loops' | 'decisions' | 'projects'
 }
 
 interface MemoryArchivePayload {
@@ -21,7 +22,14 @@ interface MemoryArchivePayload {
   profile?: {
     static?: string[]
     dynamic?: string[]
+    openLoops?: string[]
+    projects?: string[]
     summary?: string
+  }
+  index?: {
+    scopes?: Array<{ scope: string; count: number }>
+    recentTitles?: Array<{ title: string; scope: string; timestamp: string }>
+    topTags?: Array<{ tag: string; count: number }>
   }
   meta?: {
     source?: string
@@ -60,6 +68,14 @@ const importanceBadges = {
   critical: 'bg-red-500/20 text-red-400',
 }
 
+const scopeBadgeStyles: Record<string, string> = {
+  'long-term': 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20',
+  'daily': 'bg-slate-500/10 text-slate-300 border-slate-500/20',
+  'open-loops': 'bg-red-500/10 text-red-300 border-red-500/20',
+  'decisions': 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20',
+  'projects': 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+}
+
 function MemoryCard({ entry }: { entry: MemoryEntry }) {
   const IconComponent = typeIcons[entry.type]
 
@@ -75,11 +91,12 @@ function MemoryCard({ entry }: { entry: MemoryEntry }) {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           <span className={`rounded px-2 py-1 text-[10px] ${importanceBadges[entry.importance]}`}>{entry.importance.toUpperCase()}</span>
+          {entry.scope ? <span className={`rounded border px-2 py-1 text-[10px] ${scopeBadgeStyles[entry.scope] || 'border-slate-700 text-slate-300'}`}>{entry.scope}</span> : null}
           <div className="flex items-center gap-1 text-[10px] text-slate-500"><Clock className="h-3 w-3" />{new Date(entry.timestamp).toLocaleDateString()}</div>
         </div>
       </div>
 
-      <p className="mb-3 text-sm leading-relaxed text-slate-300 whitespace-pre-wrap">{entry.content}</p>
+      <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{entry.content}</p>
 
       <div className="flex items-center gap-2">
         <Tag className="h-3 w-3 shrink-0 text-slate-400" />
@@ -98,6 +115,7 @@ export function MemoryArchive() {
   const [selectedType, setSelectedType] = useState<string>('all')
   const [selectedImportance, setSelectedImportance] = useState<string>('all')
   const [selectedAgent, setSelectedAgent] = useState<string>('all')
+  const [selectedScope, setSelectedScope] = useState<string>('all')
   const [isMobile, setIsMobile] = useState(false)
   const [data, setData] = useState<MemoryArchivePayload>({ items: [] })
 
@@ -125,6 +143,7 @@ export function MemoryArchive() {
   const agents = [...new Set(memoryEntries.map((entry) => entry.agent))]
   const types = ['conversation', 'decision', 'insight', 'task', 'briefing']
   const importanceLevels = ['low', 'medium', 'high', 'critical']
+  const scopes = ['long-term', 'daily', 'open-loops', 'decisions', 'projects']
 
   const filteredEntries = useMemo(() => {
     return memoryEntries.filter((entry) => {
@@ -136,10 +155,11 @@ export function MemoryArchive() {
       const matchesType = selectedType === 'all' || entry.type === selectedType
       const matchesImportance = selectedImportance === 'all' || entry.importance === selectedImportance
       const matchesAgent = selectedAgent === 'all' || entry.agent === selectedAgent
+      const matchesScope = selectedScope === 'all' || entry.scope === selectedScope
 
-      return matchesSearch && matchesType && matchesImportance && matchesAgent
+      return matchesSearch && matchesType && matchesImportance && matchesAgent && matchesScope
     })
-  }, [memoryEntries, searchQuery, selectedType, selectedImportance, selectedAgent])
+  }, [memoryEntries, searchQuery, selectedType, selectedImportance, selectedAgent, selectedScope])
 
   const stats = {
     total: memoryEntries.length,
@@ -154,7 +174,7 @@ export function MemoryArchive() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="mb-1 text-lg font-bold text-blue-400 md:text-2xl">🧠 MEMORY ARCHIVE</h2>
-            <p className="text-sm text-slate-400 md:text-base">Real workspace-backed memory, profile synthesis, and searchable continuity.</p>
+            <p className="text-sm text-slate-400 md:text-base">Scoped memory, profile synthesis, and local retrieval inspired by the good parts of Supermemory.</p>
           </div>
           <div className="shrink-0 text-right text-sm">
             <div className="font-bold text-white">{filteredEntries.length}/{stats.total}</div>
@@ -162,28 +182,77 @@ export function MemoryArchive() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-800/70 p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white"><Database className="h-4 w-4 text-cyan-300" />Profile snapshot</div>
-          <div className="text-sm text-slate-300">{data.profile?.summary || 'No synthesized profile available yet.'}</div>
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Static profile</div>
-              <div className="mt-2 space-y-1 text-sm text-slate-300">
-                {(data.profile?.static || []).slice(0, 5).map((item, idx) => <div key={idx}>• {item}</div>)}
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="rounded-xl border border-slate-800 bg-slate-800/70 p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white"><Database className="h-4 w-4 text-cyan-300" />Profile snapshot</div>
+            <div className="text-sm text-slate-300">{data.profile?.summary || 'No synthesized profile available yet.'}</div>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Static profile</div>
+                <div className="mt-2 space-y-1 text-sm text-slate-300">
+                  {(data.profile?.static || []).slice(0, 6).map((item, idx) => <div key={idx}>• {item}</div>)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Recent context</div>
+                <div className="mt-2 space-y-1 text-sm text-slate-300">
+                  {(data.profile?.dynamic || []).slice(0, 6).map((item, idx) => <div key={idx}>• {item}</div>)}
+                </div>
               </div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Recent context</div>
-              <div className="mt-2 space-y-1 text-sm text-slate-300">
-                {(data.profile?.dynamic || []).slice(0, 5).map((item, idx) => <div key={idx}>• {item}</div>)}
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Open loops</div>
+                <div className="mt-2 space-y-1 text-sm text-slate-300">
+                  {(data.profile?.openLoops || []).slice(0, 4).map((item, idx) => <div key={idx}>• {item}</div>)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Project threads</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(data.profile?.projects || []).slice(0, 6).map((item, idx) => <span key={idx} className="rounded bg-slate-700 px-2 py-1 text-[11px] text-slate-300">{item}</span>)}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 text-[11px] text-slate-500">Source: {data.meta?.source || 'unknown'} · Generated {data.meta?.generatedAt ? new Date(data.meta.generatedAt).toLocaleString() : 'unknown'}</div>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-800/70 p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white"><Layers3 className="h-4 w-4 text-emerald-300" />Memory index</div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+              {(data.index?.scopes || []).map((scope) => (
+                <div key={scope.scope} className="rounded-lg bg-slate-900/70 px-3 py-2 text-center">
+                  <div className="text-sm font-semibold text-white">{scope.count}</div>
+                  <div className="text-[11px] text-slate-500">{scope.scope}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Recent titles</div>
+                <div className="mt-2 space-y-2">
+                  {(data.index?.recentTitles || []).slice(0, 6).map((item, idx) => (
+                    <div key={`${item.title}-${idx}`} className="rounded bg-slate-900/70 px-3 py-2">
+                      <div className="text-sm text-white">{item.title}</div>
+                      <div className="text-[11px] text-slate-500">{item.scope} · {new Date(item.timestamp).toLocaleDateString()}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Top tags</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(data.index?.topTags || []).slice(0, 10).map((item) => (
+                    <span key={item.tag} className="rounded border border-slate-700 bg-slate-900/70 px-2 py-1 text-[11px] text-slate-300">#{item.tag} · {item.count}</span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-          <div className="mt-3 text-[11px] text-slate-500">Source: {data.meta?.source || 'unknown'} · Generated {data.meta?.generatedAt ? new Date(data.meta.generatedAt).toLocaleString() : 'unknown'}</div>
         </div>
 
         <div className="rounded-xl bg-slate-800 p-4">
-          <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5'}`}>
+          <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-6'}`}>
             <div className={`${isMobile ? '' : 'lg:col-span-2'} relative`}>
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-slate-400" />
               <input
@@ -194,6 +263,10 @@ export function MemoryArchive() {
                 className="w-full rounded-lg border border-slate-600 bg-slate-700 py-2.5 pl-10 pr-4 text-white outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
+            <select value={selectedScope} onChange={(e) => setSelectedScope(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-700 px-3 py-2.5 text-white outline-none focus:border-blue-500">
+              <option value="all">All Scopes</option>
+              {scopes.map((scope) => <option key={scope} value={scope}>{scope}</option>)}
+            </select>
             <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-700 px-3 py-2.5 text-white outline-none focus:border-blue-500">
               <option value="all">All Types</option>
               {types.map((type) => <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>)}
