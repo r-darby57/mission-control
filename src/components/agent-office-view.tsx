@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { MessageSquare, Settings, Zap, Clock, CheckCircle2, Activity, RadioTower, Moon, BrainCircuit, Database, Workflow } from 'lucide-react'
+import { MessageSquare, Settings, Zap, Clock, CheckCircle2, Activity, Moon, BrainCircuit, Database, Workflow, RefreshCw } from 'lucide-react'
 
 interface SystemStatusPayload {
   generatedAt?: string
@@ -172,23 +172,34 @@ export function AgentOfficeView() {
   const [selectedNode, setSelectedNode] = useState<OperatorNode | null>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [data, setData] = useState<SystemStatusPayload>(fallbackData)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    let mounted = true
 
     async function load() {
       try {
-        const res = await fetch('/api/system/status')
+        setIsRefreshing(true)
+        const res = await fetch('/api/system/status', { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to load system status')
         const json = await res.json()
-        setData(json)
+        if (mounted) setData(json)
       } catch {
-        setData(fallbackData)
+        if (mounted) setData(fallbackData)
+      } finally {
+        if (mounted) setIsRefreshing(false)
       }
     }
 
     load()
-    return () => clearInterval(timer)
+    const refreshInterval = setInterval(load, 30000)
+
+    return () => {
+      mounted = false
+      clearInterval(timer)
+      clearInterval(refreshInterval)
+    }
   }, [])
 
   const nodes = useMemo<OperatorNode[]>(() => {
@@ -267,10 +278,10 @@ export function AgentOfficeView() {
         currentTask: `Using ${data.source || 'unknown'} state source with last update ${formatTs(data.updatedAt)}`,
         lastActivity: formatTs(data.updatedAt),
         reliability: data.updatedAt ? 93 : 75,
-        signalsProcessed: 2,
-        improvementsShipped: 2,
+        signalsProcessed: 4,
+        improvementsShipped: 4,
         workstation: 'Archive Vault',
-        detail: 'Preserving operational context for continuity across wake cycles and compaction.',
+        detail: 'Preserving operational context for continuity across wake cycles, compaction, and canonical memory updates.',
       },
     ]
   }, [data])
@@ -285,10 +296,13 @@ export function AgentOfficeView() {
         <div>
           <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Operator workspace</div>
           <h2 className="mt-2 text-2xl font-bold text-cyan-300">RJ System Office</h2>
-          <p className="mt-1 text-sm text-slate-400">Core operating nodes now pulled from live system telemetry instead of pure mock theater.</p>
+          <p className="mt-1 text-sm text-slate-400">Core operating nodes pulled from live telemetry and refreshed automatically.</p>
         </div>
         <div className="text-left md:text-right">
-          <div className="text-2xl font-mono text-emerald-300">{currentTime.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour12: false })} PDT</div>
+          <div className="flex items-center justify-start gap-2 md:justify-end">
+            <RefreshCw className={`h-4 w-4 text-cyan-300 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <div className="text-2xl font-mono text-emerald-300">{currentTime.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour12: false })} PDT</div>
+          </div>
           <div className="text-sm text-slate-400">{activeNodes}/{nodes.length} core nodes engaged</div>
         </div>
       </div>

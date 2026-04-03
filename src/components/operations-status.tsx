@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, Database, Shield, RadioTower, Workflow, BrainCircuit, Moon, CheckCircle2, AlertTriangle, ListTodo } from 'lucide-react'
+import { Activity, Database, Shield, RadioTower, Workflow, BrainCircuit, Moon, CheckCircle2, AlertTriangle, ListTodo, RefreshCw } from 'lucide-react'
 import { CronOpsCard } from './cron-ops-card'
 
 interface OpenLoopItem {
@@ -109,20 +109,31 @@ function HealthPill({ healthy, label }: { healthy: boolean; label: string }) {
 
 export function OperationsStatus() {
   const [data, setData] = useState<SystemStatusPayload>(fallbackData)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
+    let mounted = true
+
     async function load() {
       try {
-        const res = await fetch('/api/system/status')
+        setIsRefreshing(true)
+        const res = await fetch('/api/system/status', { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to load system status')
         const json = await res.json()
-        setData(json)
+        if (mounted) setData(json)
       } catch {
-        setData(fallbackData)
+        if (mounted) setData(fallbackData)
+      } finally {
+        if (mounted) setIsRefreshing(false)
       }
     }
 
     load()
+    const interval = setInterval(load, 30000)
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
   }, [])
 
   const summary = useMemo(() => {
@@ -187,7 +198,7 @@ export function OperationsStatus() {
           <p className="mt-1 text-sm text-slate-400">Live telemetry plus explicit open loops, because good operators track unfinished business.</p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-emerald-300">
-          <Activity className="h-4 w-4" />
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           <span className="font-mono">source {data.source || 'unknown'}</span>
         </div>
       </div>
@@ -199,7 +210,7 @@ export function OperationsStatus() {
         <HealthPill healthy={summary.cronFailing === 0} label={`Cron failing ${summary.cronFailing}`} />
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-4">
         <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Operator confidence</div>
           <div className="mt-2 text-lg font-semibold text-white">{summary.avgConfidence}%</div>
@@ -214,6 +225,11 @@ export function OperationsStatus() {
           <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Top swarm pressure</div>
           <div className="mt-2 text-sm font-semibold text-amber-300">{data.missionSwarm?.topRecommendation || 'No recommendation loaded'}</div>
           <div className="mt-1 text-sm text-slate-400">Safe Builder: {data.missionSwarm?.safeBuilderStatus || 'unknown'}</div>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Open loop posture</div>
+          <div className="mt-2 text-lg font-semibold text-white">{data.openLoops?.ready ?? 0} ready / {data.openLoops?.blocked ?? 0} blocked</div>
+          <div className="mt-1 text-sm text-slate-400">The system should show unfinished work as clearly as health.</div>
         </div>
       </div>
 
@@ -262,7 +278,7 @@ export function OperationsStatus() {
               <div key={item.id} className="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-white">{item.title || 'Untitled loop'}</div>
-                  <div className={`text-[11px] uppercase tracking-[0.14em] ${item.status === 'blocked' ? 'text-red-300' : 'text-emerald-300'}`}>{item.status || 'unknown'}</div>
+                  <div className={`text-[11px] uppercase tracking-[0.14em] ${item.status === 'blocked' ? 'text-red-300' : item.status === 'completed' ? 'text-slate-400' : 'text-emerald-300'}`}>{item.status || 'unknown'}</div>
                 </div>
                 <div className="mt-1 text-xs text-slate-400">{item.summary || 'No summary provided.'}</div>
                 <div className="mt-2 text-[11px] text-cyan-300">Next: {item.nextAction || 'No next action recorded.'}</div>
