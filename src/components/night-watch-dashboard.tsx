@@ -223,8 +223,36 @@ export function NightWatchDashboard() {
     }
   }, [swarmEvents])
 
+  const topRecommendationTitle = swarm.state?.lastRecommendation?.title || state.missionSwarm?.topRecommendation?.title || 'No recommendation yet.'
+  const topRecommendationSummary = swarm.state?.lastRecommendation?.summary || state.missionSwarm?.topRecommendation?.summary || 'Waiting for first advisory cycle.'
+  const builderSummary = swarm.state?.lastSafeBuilderAction?.summary || state.missionSwarm?.lastSafeBuilderAction?.summary || 'Safe Builder not ready yet.'
+  const builderValidation = swarm.state?.lastSafeBuilderAction?.validation || state.missionSwarm?.lastSafeBuilderAction?.validation || 'Validation rules pending.'
+
   return (
     <div className="space-y-4 md:space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 shadow-[0_10px_30px_-20px_rgba(34,211,238,0.45)]">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-300/80">Top Recommendation</div>
+          <div className="mt-2 text-base font-semibold text-white leading-snug">{topRecommendationTitle}</div>
+          <div className="mt-2 text-sm text-slate-300 leading-relaxed">{topRecommendationSummary}</div>
+        </div>
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 shadow-[0_10px_30px_-20px_rgba(16,185,129,0.45)]">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-300/80">Safe Builder</div>
+          <div className="mt-2 text-base font-semibold text-white leading-snug">{swarm.state?.lastSafeBuilderAction?.status || state.missionSwarm?.lastSafeBuilderAction?.status || 'unknown'}</div>
+          <div className="mt-2 text-sm text-slate-300 leading-relaxed">{builderSummary}</div>
+          <div className="mt-2 text-[11px] text-slate-400">{builderValidation}</div>
+        </div>
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-[0_10px_30px_-20px_rgba(245,158,11,0.45)]">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-amber-300/80">Consensus</div>
+          <div className="mt-2 flex items-end gap-2">
+            <div className="text-2xl font-bold text-white">{consensus.average ?? 'n/a'}</div>
+            <div className="text-sm text-amber-200">spread {consensus.spread ?? 'n/a'}</div>
+          </div>
+          <div className="mt-2 text-sm text-slate-300">{consensus.label}</div>
+          <div className="mt-2 text-[11px] text-slate-400">Repeated {recurrence}x in recent swarm history</div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
         <NightWatchCard title="🌙 Night Watch Status" meta={state.currentMode || 'safe-internal'} accent="ring-1 ring-indigo-500/10">
           <div className="space-y-4 text-sm">
