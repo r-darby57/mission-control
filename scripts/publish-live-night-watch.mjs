@@ -39,10 +39,13 @@ async function loadCronStatus() {
   }
 }
 
+const state = await loadJson(path.join('night-watch', 'state.json'))
+const swarmState = await loadJson(path.join('night-watch', 'mission-swarm', 'state.json'))
+
 const payload = {
-  state: await loadJson(path.join('night-watch', 'state.json')),
+  state,
   trends: await loadJson(path.join('night-watch', 'trends.json')),
-  swarmState: await loadJson(path.join('night-watch', 'mission-swarm', 'state.json')),
+  swarmState,
   swarmRecommendations: await loadJson(path.join('night-watch', 'mission-swarm', 'recommendations.json')),
   cronStatus: await loadCronStatus(),
 }
@@ -63,4 +66,8 @@ if (!response.ok) {
 }
 
 const result = await response.json()
-console.log(JSON.stringify(result, null, 2))
+console.log(JSON.stringify({
+  ...result,
+  expectedNightWatchLastRun: state.lastRun ?? null,
+  expectedSwarmLastRun: swarmState.lastRun ?? null,
+}, null, 2))
