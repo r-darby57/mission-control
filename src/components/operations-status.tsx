@@ -1,8 +1,20 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, Database, Shield, RadioTower, Workflow, BrainCircuit, Moon, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Activity, Database, Shield, RadioTower, Workflow, BrainCircuit, Moon, CheckCircle2, AlertTriangle, ListTodo } from 'lucide-react'
 import { CronOpsCard } from './cron-ops-card'
+
+interface OpenLoopItem {
+  id?: string
+  title?: string
+  status?: string
+  priority?: string
+  owner?: string
+  area?: string
+  summary?: string
+  nextAction?: string
+  lastUpdated?: string
+}
 
 interface SystemStatusPayload {
   generatedAt?: string
@@ -47,6 +59,13 @@ interface SystemStatusPayload {
     topRecommendation?: string | null
     safeBuilderStatus?: string | null
   }
+  openLoops?: {
+    updatedAt?: string | null
+    total?: number
+    blocked?: number
+    ready?: number
+    items?: OpenLoopItem[]
+  }
 }
 
 const fallbackData: SystemStatusPayload = {
@@ -56,6 +75,7 @@ const fallbackData: SystemStatusPayload = {
   cron: { total: 0, healthy: 0, failing: 0, nextRunAtMs: null },
   nightWatch: { lastRun: null, lastStatus: 'unknown', currentMode: 'unknown' },
   missionSwarm: { lastRun: null, lastStatus: 'unknown', topRecommendation: null, safeBuilderStatus: null },
+  openLoops: { updatedAt: null, total: 0, blocked: 0, ready: 0, items: [] },
 }
 
 function formatTs(ts?: string | null) {
@@ -110,6 +130,7 @@ export function OperationsStatus() {
     const gatewayHealthy = data.opsStatus?.gatewayHealth === 'healthy'
     const configHealthy = data.opsStatus?.configHealth === 'valid'
     const cronFailing = data.cron?.failing || 0
+    const blockedLoops = data.openLoops?.blocked || 0
     const avgConfidence = [opsHealthy, gatewayHealthy, configHealthy, cronFailing === 0].filter(Boolean).length * 25
 
     return {
@@ -117,6 +138,7 @@ export function OperationsStatus() {
       gatewayHealthy,
       configHealthy,
       cronFailing,
+      blockedLoops,
       avgConfidence,
     }
   }, [data])
@@ -162,7 +184,7 @@ export function OperationsStatus() {
         <div>
           <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">System command</div>
           <h2 className="mt-2 text-xl font-bold text-emerald-300">RJ Operations Status</h2>
-          <p className="mt-1 text-sm text-slate-400">Live telemetry from failsafe state, ops health, cron, Night Watch, and Mission Swarm.</p>
+          <p className="mt-1 text-sm text-slate-400">Live telemetry plus explicit open loops, because good operators track unfinished business.</p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-emerald-300">
           <Activity className="h-4 w-4" />
@@ -219,6 +241,34 @@ export function OperationsStatus() {
           <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-white"><Shield className="h-4 w-4 text-rose-300" />Failover reason</div>
           <div className="text-sm text-slate-300">{data.opsStatus?.failoverReason || data.modelFailsafe?.lastReason || 'No failover reason recorded.'}</div>
           <div className="mt-1 text-xs text-slate-500">If this changes overnight, it should show up here first.</div>
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-white"><ListTodo className="h-4 w-4 text-cyan-300" />Open loops</div>
+          <div className="text-xs text-slate-500">updated {formatTs(data.openLoops?.updatedAt)}</div>
+        </div>
+        <div className="mb-3 grid grid-cols-3 gap-3 text-center">
+          <div className="rounded-lg bg-slate-900/80 px-3 py-2"><div className="text-lg font-bold text-white">{data.openLoops?.total ?? 0}</div><div className="text-[11px] text-slate-500">Total</div></div>
+          <div className="rounded-lg bg-slate-900/80 px-3 py-2"><div className="text-lg font-bold text-red-300">{data.openLoops?.blocked ?? 0}</div><div className="text-[11px] text-slate-500">Blocked</div></div>
+          <div className="rounded-lg bg-slate-900/80 px-3 py-2"><div className="text-lg font-bold text-emerald-300">{data.openLoops?.ready ?? 0}</div><div className="text-[11px] text-slate-500">Ready</div></div>
+        </div>
+        <div className="space-y-2">
+          {(data.openLoops?.items || []).length === 0 ? (
+            <div className="text-sm text-slate-400">No open loops recorded.</div>
+          ) : (
+            (data.openLoops?.items || []).slice(0, 3).map((item) => (
+              <div key={item.id} className="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-semibold text-white">{item.title || 'Untitled loop'}</div>
+                  <div className={`text-[11px] uppercase tracking-[0.14em] ${item.status === 'blocked' ? 'text-red-300' : 'text-emerald-300'}`}>{item.status || 'unknown'}</div>
+                </div>
+                <div className="mt-1 text-xs text-slate-400">{item.summary || 'No summary provided.'}</div>
+                <div className="mt-2 text-[11px] text-cyan-300">Next: {item.nextAction || 'No next action recorded.'}</div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

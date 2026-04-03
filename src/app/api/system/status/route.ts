@@ -16,15 +16,17 @@ async function readJson(relativePath: string) {
 }
 
 export async function GET() {
-  const [modelFailsafe, opsStatus] = await Promise.all([
+  const [modelFailsafe, opsStatus, openLoops] = await Promise.all([
     readJson('model-failsafe/state.json'),
     readJson('ops-logs/status.json'),
+    readJson('memory/open-loops.json'),
   ])
 
   const { cronStatus, meta, state, swarmState } = await getNightWatchData()
   const jobs = Array.isArray((cronStatus as any)?.jobs) ? (cronStatus as any).jobs : []
   const failingJobs = jobs.filter((job: any) => (job?.state?.consecutiveErrors || 0) > 0 || job?.state?.lastStatus === 'error').length
   const healthyJobs = jobs.filter((job: any) => job?.state?.lastStatus === 'ok').length
+  const loopItems = Array.isArray(openLoops?.items) ? openLoops.items : []
 
   const systemStatus = {
     generatedAt: new Date().toISOString(),
@@ -75,6 +77,13 @@ export async function GET() {
       lastStatus: (swarmState as any)?.lastStatus ?? 'unknown',
       topRecommendation: (swarmState as any)?.lastRecommendation?.title ?? null,
       safeBuilderStatus: (swarmState as any)?.lastSafeBuilderAction?.status ?? null,
+    },
+    openLoops: {
+      updatedAt: openLoops?.updatedAt ?? null,
+      total: loopItems.length,
+      blocked: loopItems.filter((item: any) => item?.status === 'blocked').length,
+      ready: loopItems.filter((item: any) => item?.status === 'ready').length,
+      items: loopItems.slice(0, 5),
     },
   }
 
